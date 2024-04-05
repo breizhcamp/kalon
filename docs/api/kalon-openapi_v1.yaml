@@ -1,0 +1,448 @@
+openapi: "3.0.3"
+info:
+  title: "kalon API"
+  description: "kalon API"
+  version: "1.0.0"
+servers:
+  - url: "https://kalon"
+paths:
+  /api/teams/{id}:
+    put:
+      summary: "PUT api/teams/{id}"
+      operationId: "update"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+            format: "uuid"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TeamPartialDTO"
+        required: true
+      responses:
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/TeamDTO"
+    get:
+      summary: "GET api/teams/{id}"
+      operationId: "getTeamInfos"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+            format: "uuid"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/TeamDTO"
+  /api/teams:
+    post:
+      summary: "POST api/teams"
+      operationId: "addTeam"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TeamPartialDTO"
+        required: true
+      responses:
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/TeamDTO"
+    get:
+      summary: "GET api/teams"
+      operationId: "list"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                type: "array"
+                items:
+                  type: "string"
+                  format: "uuid"
+  /api/teams/{id}/members/{memberId}:
+    post:
+      summary: "POST api/teams/{id}/members/{memberId}"
+      operationId: "addMember"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+            format: "uuid"
+        - name: "memberId"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+            format: "uuid"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/TeamDTO"
+    delete:
+      summary: "DELETE api/teams/{id}/members/{memberId}"
+      operationId: "removeMember"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+            format: "uuid"
+        - name: "memberId"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+            format: "uuid"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/TeamDTO"
+  /api/events:
+    post:
+      summary: "POST api/events"
+      operationId: "addEvent"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EventPartialDTO"
+        required: true
+      responses:
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/EventDTO"
+    get:
+      summary: "GET api/events"
+      operationId: "list"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                type: "array"
+                items:
+                  type: "integer"
+                  format: "int32"
+  /api/events/{id}/members/{memberId}:
+    post:
+      summary: "POST api/events/{id}/members/{memberId}"
+      operationId: "addMember"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "integer"
+            format: "int32"
+        - name: "memberId"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+            format: "uuid"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/EventDTO"
+    delete:
+      summary: "DELETE api/events/{id}/members/{memberId}"
+      operationId: "removeMember"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "integer"
+            format: "int32"
+        - name: "memberId"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+            format: "uuid"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/EventDTO"
+  /api/events/{id}:
+    get:
+      summary: "GET api/events/{id}"
+      operationId: "getEventInfos"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "integer"
+            format: "int32"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/EventDTO"
+  /api/members/{id}:
+    put:
+      summary: "PUT api/members/{id}"
+      operationId: "update"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+            format: "uuid"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MemberPartialDTO"
+        required: true
+      responses:
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/MemberDTO"
+    get:
+      summary: "GET api/members/{id}"
+      operationId: "getById"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+            format: "uuid"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/MemberDTO"
+  /api/members:
+    post:
+      summary: "POST api/members"
+      operationId: "addMember"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MemberPartialDTO"
+        required: true
+      responses:
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/MemberDTO"
+    get:
+      summary: "GET api/members"
+      operationId: "listAll"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                type: "array"
+                items:
+                  type: "string"
+                  format: "uuid"
+  /api/members/{id}/contact:
+    post:
+      summary: "POST api/members/{id}/contact"
+      operationId: "addContact"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+            format: "uuid"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/MemberDTO"
+components:
+  schemas:
+    TeamPartialDTO:
+      type: "object"
+      properties:
+        name:
+          type: "string"
+        description:
+          type: "string"
+    TeamDTO:
+      type: "object"
+      properties:
+        id:
+          type: "string"
+          format: "uuid"
+        name:
+          type: "string"
+        description:
+          type: "string"
+        memberIds:
+          type: "array"
+          items:
+            type: "string"
+            format: "uuid"
+      required:
+        - "id"
+        - "name"
+        - "memberIds"
+    EventPartialDTO:
+      type: "object"
+      properties:
+        name:
+          type: "string"
+        year:
+          type: "integer"
+          format: "int32"
+    EventDTO:
+      type: "object"
+      properties:
+        id:
+          type: "integer"
+          format: "int32"
+        name:
+          type: "string"
+        year:
+          type: "integer"
+          format: "int32"
+        debutEvent:
+          type: "string"
+          format: "date-time"
+        finEvent:
+          type: "string"
+          format: "date-time"
+        debutCFP:
+          type: "string"
+          format: "date-time"
+        finCFP:
+          type: "string"
+          format: "date-time"
+        debutInscription:
+          type: "string"
+          format: "date-time"
+        finInscription:
+          type: "string"
+          format: "date-time"
+        website:
+          type: "string"
+        memberIds:
+          type: "array"
+          items:
+            type: "string"
+            format: "uuid"
+      required:
+        - "name"
+        - "debutEvent"
+        - "finEvent"
+        - "debutCFP"
+        - "finCFP"
+        - "debutInscription"
+        - "finInscription"
+        - "website"
+        - "memberIds"
+    MemberPartialDTO:
+      type: "object"
+      properties:
+        lastname:
+          type: "string"
+        firstname:
+          type: "string"
+        profilePictureLink:
+          type: "string"
+    ContactDTO:
+      type: "object"
+      properties:
+        id:
+          type: "string"
+          format: "uuid"
+        platform:
+          type: "string"
+        link:
+          type: "string"
+      required:
+        - "id"
+        - "platform"
+        - "link"
+    MemberDTO:
+      type: "object"
+      properties:
+        id:
+          type: "string"
+          format: "uuid"
+        lastname:
+          type: "string"
+        firstname:
+          type: "string"
+        teamIds:
+          type: "array"
+          items:
+            type: "string"
+            format: "uuid"
+        contacts:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/ContactDTO"
+        eventIds:
+          type: "array"
+          items:
+            type: "integer"
+            format: "int32"
+        profilePictureLink:
+          type: "string"
+      required:
+        - "id"
+        - "lastname"
+        - "firstname"
+        - "teamIds"
+        - "contacts"
+        - "eventIds"

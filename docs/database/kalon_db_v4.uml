@@ -1,0 +1,53 @@
+@startuml
+
+skinparam linetype ortho
+
+entity member {
+*id : uuid <<generated>>
+--
+*lastname : text
+*firstname : text
+profile_picture_lnk : text
+}
+
+entity event {
+*id : number <<generated>>
+--
+*year : number
+name: text
+debut_event : timestamp
+fin_event : timestamp
+debut_cfp : timestamp
+fin_cfp : timestamp
+debut_inscription : timestamp
+fin_inscription : timestamp
+website : text
+}
+
+entity contact {
+*id : uuid <<generated>>
+--
+*member_id : uuid <<FK>>
+*platform : text
+*link : text
+}
+
+entity team {
+*id : uuid <<generated>>
+--
+*name : text
+description: text
+}
+
+entity participates {
+*member_id : uuid <<FK>>
+*team_id : uuid <<FK>>
+*event_id : number <<FK>>
+--
+}
+
+member ||--o{ participates
+event ||--o{ participates
+team ||--o{ participates
+member ||--o{ contact
+@enduml

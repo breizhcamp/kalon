@@ -1,0 +1,11 @@
+version: "3.9"
+services:
+  postgresql:
+    image: postgres:15.2
+    container_name: kalon-db
+    environment:
+      - POSTGRES_DB=kalon
+      - POSTGRES_USER=kalon
+      - POSTGRES_PASSWORD=kalon
+    ports:
+      - '5432:5432'

@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                   https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="1.0.0" author="Claire">
+
+        <!-- initialise SEQUENCE `id_sequence` for EVENT(id) column -->
+        <createSequence sequenceName="id_sequence" incrementBy="1" startValue="1" minValue="1"/>
+
+    </changeSet>
+
+    <changeSet id="1.0.1" author="Claire">
+
+        <!-- Check that the sequence for table EVENT has been created -->
+        <preConditions>
+            <sequenceExists sequenceName="id_sequence"/>
+        </preConditions>
+
+        <!-- initialise entity table MEMBER -->
+        <createTable tableName="member">
+            <column name="id" type="uuid" defaultOnNull="true" defaultValueComputed="gen_random_uuid()" ><constraints primaryKey="true" primaryKeyName="PK_MEMBER" nullable="false"/></column>
+            <column name="lastname" type="text"><constraints nullable="false"/></column>
+            <column name="firstname" type="text"><constraints nullable="false"/></column>
+            <column name="profile_picture_lnk" type="text"><constraints nullable="true"/></column>
+        </createTable>
+
+        <!-- initialise entity table TEAM -->
+        <createTable tableName="team">
+            <column name="id" type="uuid" defaultOnNull="true" defaultValueComputed="gen_random_uuid()" ><constraints primaryKey="true" primaryKeyName="PK_TEAM" nullable="false"/></column>
+            <column name="name" type="text"><constraints nullable="false"/></column>
+        </createTable>
+
+        <!-- initialise entity table EVENT -->
+        <createTable tableName="event">
+            <column name="id" type="number" defaultValueComputed="nextval('id_sequence')"><constraints primaryKey="true" primaryKeyName="PK_EVENT" nullable="false"/></column>
+            <column name="year" type="number"><constraints nullable="false"/></column>
+            <column name="debut_event" type="timestamp"><constraints nullable="false"/></column>
+            <column name="fin_event" type="timestamp"><constraints nullable="false"/></column>
+            <column name="debut_cfp" type="timestamp"><constraints nullable="false"/></column>
+            <column name="fin_cfp" type="timestamp"><constraints nullable="false"/></column>
+            <column name="debut_inscription" type="timestamp"><constraints nullable="false"/></column>
+            <column name="fin_inscription" type="timestamp"><constraints nullable="false"/></column>
+            <column name="website" type="text"/>
+        </createTable>
+
+        <!-- initialise entity table CONTACT referencing MEMBER -->
+        <createTable tableName="contact">
+            <column name="id" type="uuid" defaultOnNull="true" defaultValueComputed="gen_random_uuid()" ><constraints primaryKey="true" nullable="false"/></column>
+            <column name="member_id" type="uuid"><constraints nullable="false" foreignKeyName="FK_MEMBER_CONTACT" references="member(id)"/></column>
+            <column name="platform" type="text"><constraints nullable="false"/></column>
+            <column name="link" type="text"><constraints nullable="false"/></column>
+        </createTable>
+
+        <!-- initialise association table for ManyToMany relationship between MEMBER and TEAM -->
+        <createTable tableName="member_team">
+            <column name="member_id" type="uuid"><constraints primaryKey="true" nullable="false" foreignKeyName="FK_MEMBER_TEAM" references="member(id)"/></column>
+            <column name="team_id" type="uuid"><constraints primaryKey="true" nullable="false" foreignKeyName="FK_TEAM_MEMBER" references="team(id)"/></column>
+        </createTable>
+
+        <!-- initialise association table for ManyToMany relationship between MEMBER and EVENT -->
+        <createTable tableName="member_event">
+            <column name="member_id" type="uuid"><constraints primaryKey="true" nullable="false" foreignKeyName="FK_MEMBER_EVENT" references="member(id)"/></column>
+            <column name="event_id" type="number"><constraints primaryKey="true" nullable="false" foreignKeyName="FK_EVENT_MEMBER" references="event(id)"/></column>
+        </createTable>
+
+    </changeSet>
+
+    <!-- ADD a non-null text column `name` on table EVENT -->
+    <changeSet id="1.0.2" author="Claire">
+
+        <preConditions>
+            <tableExists tableName="event"/>
+        </preConditions>
+
+        <addColumn tableName="event">
+            <column name="name" type="text"><constraints nullable="false"/></column>
+        </addColumn>
+
+    </changeSet>
+
+    <!-- ADD a nullable text column `description` on table TEAM -->
+    <changeSet id="1.0.3" author="Claire">
+
+        <preConditions>
+            <tableExists tableName="team"/>
+        </preConditions>
+
+        <addColumn tableName="team">
+            <column name="description" type="text"><constraints nullable="true"/></column>
+        </addColumn>
+
+    </changeSet>
+
+    <!--
+        DROP not null constraints on all columns except `(id, year)` on table EVENT
+        to be able to create from partial information
+    -->
+    <changeSet id="1.0.4" author="Claire">
+
+        <preConditions>
+            <and>
+                <columnExists tableName="event" columnName="name"/>
+                <columnExists tableName="event" columnName="debut_event"/>
+                <columnExists tableName="event" columnName="fin_event"/>
+                <columnExists tableName="event" columnName="debut_cfp"/>
+                <columnExists tableName="event" columnName="fin_cfp"/>
+                <columnExists tableName="event" columnName="debut_inscription"/>
+                <columnExists tableName="event" columnName="fin_inscription"/>
+                <columnExists tableName="event" columnName="website"/>
+            </and>
+        </preConditions>
+
+        <dropNotNullConstraint tableName="event" columnName="name"/>
+        <dropNotNullConstraint tableName="event" columnName="debut_event"/>
+        <dropNotNullConstraint tableName="event" columnName="fin_event"/>
+        <dropNotNullConstraint tableName="event" columnName="debut_cfp"/>
+        <dropNotNullConstraint tableName="event" columnName="fin_cfp"/>
+        <dropNotNullConstraint tableName="event" columnName="debut_inscription"/>
+        <dropNotNullConstraint tableName="event" columnName="fin_inscription"/>
+        <dropNotNullConstraint tableName="event" columnName="website"/>
+
+    </changeSet>
+</databaseChangeLog>

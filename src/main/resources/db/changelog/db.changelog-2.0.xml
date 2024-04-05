@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                   https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <preConditions>
+        <not>
+            <or>
+                <uniqueConstraintExists tableName="event" columnNames="name"/>
+                <uniqueConstraintExists tableName="event" columnNames="debut_event"/>
+                <uniqueConstraintExists tableName="event" columnNames="fin_event"/>
+                <uniqueConstraintExists tableName="event" columnNames="debut_cfp"/>
+                <uniqueConstraintExists tableName="event" columnNames="fin_cfp"/>
+                <uniqueConstraintExists tableName="event" columnNames="debut_inscription"/>
+                <uniqueConstraintExists tableName="event" columnNames="fin_inscription"/>
+                <uniqueConstraintExists tableName="event" columnNames="website"/>
+            </or>
+        </not>
+    </preConditions>
+
+    <changeSet id="2.0.0" author="Claire">
+
+        <!--
+            initialise association table PARTICIPATION
+            for ManyToManyToMany relationship
+            between MEMBER, EVENT and TEAM
+        -->
+        <createTable tableName="participation">
+            <column name="member_id" type="uuid"><constraints nullable="false" foreignKeyName="FK_MEMBER_PART" references="member(id)" primaryKey="true"/></column>
+            <column name="event_id" type="number"><constraints nullable="false" foreignKeyName="FK_EVENT_PART" references="event(id)" primaryKey="true"/></column>
+            <column name="team_id" type="uuid"><constraints nullable="false" foreignKeyName="FK_TEAM_PART" references="team(id)" primaryKey="true"/></column>
+        </createTable>
+
+    </changeSet>
+
+    <changeSet id="2.0.1.1" author="Claire">
+
+        <!-- check that there exists at least 1 team AND the current dialect accepts the sql request -->
+        <preConditions onFail="MARK_RAN">
+            <and>
+                <dbms type="postgresql"/>
+                <not>
+                    <rowCount expectedRows="0" tableName="team"/>
+                </not>
+                <tableExists tableName="participation"/>
+            </and>
+        </preConditions>
+
+        <!-- transfer existing member_event values with default team value being the first one -->
+        <sql dbms="postgresql">
+            INSERT INTO participation (member_id, event_id, team_id)
+            SELECT me.member_id, me.event_id, (
+                SELECT id FROM team LIMIT 1
+                ) FROM member_event AS me
+        </sql>
+
+    </changeSet>
+
+    <changeSet id="2.0.1.2" author="Claire">
+
+        <!-- check that there exists at least 1 event AND the current dialect accepts the sql request -->
+        <preConditions onFail="MARK_RAN">
+            <and>
+                <dbms type="postgresql"/>
+                <not>
+                    <rowCount expectedRows="0" tableName="event"/>
+                </not>
+                <tableExists tableName="participation"/>
+            </and>
+        </preConditions>
+
+        <!-- transfer existing member_team values with default event value being the last one -->
+        <sql dbms="postgresql">
+            INSERT INTO participation (member_id, team_id, event_id)
+            SELECT mt.member_id, mt.team_id, (
+                SELECT id
+                FROM event
+                ORDER BY year DESC
+                LIMIT 1
+                ) FROM member_team AS mt
+        </sql>
+
+    </changeSet>
+
+    <!-- dropping old association table member_event after the insertion into the new one -->
+    <changeSet id="2.0.2.1" author="Claire">
+
+        <preConditions onFail="MARK_RAN">
+            <or>
+                <rowCount expectedRows="0" tableName="member_event"/>
+                <changeSetExecuted id="2.0.1.1" author="Claire"/>
+            </or>
+        </preConditions>
+
+        <dropTable tableName="member_event"/>
+    </changeSet>
+
+    <!-- dropping old association table member_team after the insertion into the new one -->
+    <changeSet id="2.0.2.2" author="Claire">
+
+        <preConditions onFail="MARK_RAN">
+            <or>
+                <rowCount expectedRows="0" tableName="member_team"/>
+                <changeSetExecuted id="2.0.1.2" author="Claire"/>
+            </or>
+        </preConditions>
+
+        <dropTable tableName="member_team"/>
+    </changeSet>
+</databaseChangeLog>

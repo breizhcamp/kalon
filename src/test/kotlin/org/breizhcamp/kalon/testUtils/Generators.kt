@@ -1,5 +1,6 @@
 package org.breizhcamp.kalon.testUtils
 
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.Month
 import kotlin.random.Random
@@ -14,7 +15,7 @@ fun generateRandomHexString(blocks: Int = 1): String {
     return builder.toString()
 }
 
-fun generateRandomLocalDateTime(year: Int = 2024): LocalDateTime =
+fun generateRandomLocalDate(year: Int = 2024): LocalDate =
     LocalDateTime.of(
         year,
         Month.of(Random.nextInt(1, 12)),
@@ -22,6 +23,6 @@ fun generateRandomLocalDateTime(year: Int = 2024): LocalDateTime =
         Random.nextInt(0, 23),
         Random.nextInt(0, 59),
         Random.nextInt(0, 59)
-    )
+    ).toLocalDate()
 
 

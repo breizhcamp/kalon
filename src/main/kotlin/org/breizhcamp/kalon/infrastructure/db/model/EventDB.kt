@@ -1,7 +1,7 @@
 package org.breizhcamp.kalon.infrastructure.db.model
 
 import jakarta.persistence.*
-import java.time.LocalDateTime
+import java.time.LocalDate
 
 @Entity
 @Table(name = "event")
@@ -11,13 +11,19 @@ data class EventDB(
     val id: Int,
     val year: Int,
     val name: String?,
-    val debutEvent: LocalDateTime?,
-    val finEvent: LocalDateTime?,
+    @Temporal(TemporalType.DATE)
+    val debutEvent: LocalDate?,
+    @Temporal(TemporalType.DATE)
+    val finEvent: LocalDate?,
     @Column(name = "debut_cfp")
-    val debutCFP: LocalDateTime?,
+    @Temporal(TemporalType.DATE)
+    val debutCFP: LocalDate?,
     @Column(name = "fin_cfp")
-    val finCFP: LocalDateTime?,
-    val debutInscription: LocalDateTime?,
-    val finInscription: LocalDateTime?,
+    @Temporal(TemporalType.DATE)
+    val finCFP: LocalDate?,
+    @Temporal(TemporalType.DATE)
+    val debutInscription: LocalDate?,
+    @Temporal(TemporalType.DATE)
+    val finInscription: LocalDate?,
     val website: String?,
 )

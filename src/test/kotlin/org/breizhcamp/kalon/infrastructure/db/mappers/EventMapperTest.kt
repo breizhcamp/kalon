@@ -3,7 +3,7 @@ package org.breizhcamp.kalon.infrastructure.db.mappers
 import org.breizhcamp.kalon.domain.entities.EventParticipant
 import org.breizhcamp.kalon.infrastructure.db.model.EventDB
 import org.breizhcamp.kalon.testUtils.generateRandomHexString
-import org.breizhcamp.kalon.testUtils.generateRandomLocalDateTime
+import org.breizhcamp.kalon.testUtils.generateRandomLocalDate
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import kotlin.random.Random
@@ -17,12 +17,12 @@ class EventMapperTest {
             id = Random.nextInt(1, 10),
             year = year,
             name = generateRandomHexString(),
-            debutEvent = generateRandomLocalDateTime(year),
-            finEvent = generateRandomLocalDateTime(year),
-            debutCFP = generateRandomLocalDateTime(year),
-            finCFP = generateRandomLocalDateTime(year),
-            debutInscription = generateRandomLocalDateTime(year),
-            finInscription = generateRandomLocalDateTime(year),
+            debutEvent = generateRandomLocalDate(year),
+            finEvent = generateRandomLocalDate(year),
+            debutCFP = generateRandomLocalDate(year),
+            finCFP = generateRandomLocalDate(year),
+            debutInscription = generateRandomLocalDate(year),
+            finInscription = generateRandomLocalDate(year),
             website = generateRandomHexString(4)
         )
 

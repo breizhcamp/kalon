@@ -60,7 +60,6 @@ class EventController (
     @PostMapping("/{id}")
     fun updateEventInfos(@PathVariable id: Int, @RequestBody partialDTO: EventPartialDTO): ResponseEntity<EventDTO> {
         logger.info { "Updating infos of Event:$id" }
-        logger.info { "${partialDTO.debutEvent} -> ${partialDTO.finEvent}" }
 
         if (handleNotFound.eventNotFound(id))
             return ResponseEntity.notFound().build()

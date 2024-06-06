@@ -1,6 +1,6 @@
 package org.breizhcamp.kalon.application.dto
 
-import java.util.UUID
+import java.util.*
 
 data class ContactDTO(
     val id: UUID,

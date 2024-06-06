@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
 import org.springframework.test.context.junit.jupiter.SpringExtension
 import java.util.*
+import kotlin.math.absoluteValue
 import kotlin.random.Random
 
 @ExtendWith(SpringExtension::class)
@@ -32,7 +33,7 @@ class ParticipationAdapterTest {
     fun existsByIds(exists: Boolean) {
         val teamId = UUID.randomUUID()
         val memberId = UUID.randomUUID()
-        val eventId = Random.nextInt(1, 10)
+        val eventId = Random.nextInt().absoluteValue
 
         every { participationRepo.existsById(ParticipationDBId(memberId, teamId, eventId)) } returns exists
 
@@ -45,7 +46,7 @@ class ParticipationAdapterTest {
     fun `createByIds should call repo with composite ids in a ParticipationDB`() {
         val teamId = UUID.randomUUID()
         val memberId = UUID.randomUUID()
-        val eventId = Random.nextInt(1, 10)
+        val eventId = Random.nextInt().absoluteValue
 
         val participationDB = ParticipationDB(ParticipationDBId(
             memberId, teamId, eventId
@@ -62,7 +63,7 @@ class ParticipationAdapterTest {
     fun `removeByIds should call repo with composited key`() {
         val teamId = UUID.randomUUID()
         val memberId = UUID.randomUUID()
-        val eventId = Random.nextInt(1, 10)
+        val eventId = Random.nextInt().absoluteValue
 
         val participationId = ParticipationDBId(
             memberId, teamId, eventId

@@ -20,30 +20,41 @@ class HandleNotFound(
 
     fun memberNotFound(id: UUID): Boolean {
         val notFound = !memberExists.exists(id)
-        if (notFound)
-            logger.warn { "Member:${id} not in database, returning a NOT_FOUND response" }
+        log(notFound, "Member:$id")
+        return notFound
+    }
+
+    fun contactNotFound(id: UUID, contactId: UUID): Boolean {
+        if (!memberExists.exists(id)) {
+            log(true, "Member:$id")
+            return true
+        }
+        val notFound = !memberExists.contactExists(id, contactId)
+        log(notFound, "Contact:$contactId for Member:$id")
         return notFound
     }
 
     fun teamNotFound(id: UUID): Boolean {
         val notFound = !teamExists.exists(id)
-        if (notFound)
-            logger.warn { "Team:${id} not in database, returning a NOT_FOUND response" }
+        log(notFound, "Team:$id")
         return notFound
     }
 
     fun eventNotFound(id: Int): Boolean {
         val notFound = !eventExists.exists(id)
-        if (notFound)
-            logger.warn { "Event:${id} not in database, returning a NOT_FOUND response" }
+        log(notFound, "Event:$id")
         return notFound
     }
 
     fun participationNotFound(teamId: UUID, memberId: UUID, eventId: Int): Boolean {
         val notFound = !participationExists.exists(teamId, memberId, eventId)
-        if (notFound)
-            logger.warn { "Participation not in database, returning a NOT_FOUND response" }
+        log(notFound, "Participation")
         return notFound
+    }
+
+    private fun log(notFound: Boolean, attribute: String) {
+        if (notFound)
+            logger.warn { "$attribute not in database, returning a NOT_FOUND response" }
     }
 
 }

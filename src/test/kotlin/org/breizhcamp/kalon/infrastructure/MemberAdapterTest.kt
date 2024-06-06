@@ -9,10 +9,9 @@ import org.breizhcamp.kalon.domain.entities.Member
 import org.breizhcamp.kalon.domain.entities.MemberFilter
 import org.breizhcamp.kalon.domain.entities.MemberPartial
 import org.breizhcamp.kalon.infrastructure.db.mappers.toMember
-import org.breizhcamp.kalon.infrastructure.db.model.ContactDB
-import org.breizhcamp.kalon.infrastructure.db.model.MemberDB
 import org.breizhcamp.kalon.infrastructure.db.repos.MemberRepo
-import org.breizhcamp.kalon.testUtils.generateRandomHexString
+import org.breizhcamp.kalon.testUtils.generateRandomContactDB
+import org.breizhcamp.kalon.testUtils.generateRandomMemberDB
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -36,7 +35,11 @@ class MemberAdapterTest {
     @Test
     fun `list should call repo with provided filter and return a list of Members`() {
         val filter = MemberFilter.empty()
-        val returned = listOf(0..2).map { this.testMemberDB() }
+        val returned = listOf(
+            generateRandomMemberDB(),
+            generateRandomMemberDB(),
+            generateRandomMemberDB()
+        )
 
         every { memberRepo.filter(filter) } returns returned
 
@@ -50,110 +53,80 @@ class MemberAdapterTest {
     fun `getById should always call repo!findById, call repo!getParticipations when result not empty, and return Optional of Member`(
         exists: Boolean
     ) {
-        val id = UUID.randomUUID()
-        val memberDB = testMemberDB().copy(id = id)
+        val memberDB = generateRandomMemberDB()
         val option = if (exists) Optional.of(memberDB) else Optional.empty()
-        every { memberRepo.findById(id) } returns option
-        every { memberRepo.getParticipations(id) } returns emptySet()
 
-        val result = memberAdapter.getById(id)
+        every { memberRepo.findById(memberDB.id) } returns option
+        every { memberRepo.getParticipations(memberDB.id) } returns emptySet()
 
-        verify { memberRepo.findById(id) }
+        val result = memberAdapter.getById(memberDB.id)
+
+        verify { memberRepo.findById(memberDB.id) }
 
         if (exists) {
             assertEquals(result, Optional.of(memberDB.toMember()))
 
-            verify { memberRepo.getParticipations(id) }
+            verify { memberRepo.getParticipations(memberDB.id) }
         } else {
             val emptyOptional: Optional<Member> = Optional.empty()
             assertEquals(result, emptyOptional)
 
-            verify { memberRepo.getParticipations(id) wasNot Called }
+            verify { memberRepo.getParticipations(memberDB.id) wasNot Called }
         }
     }
 
     @Test
     fun `add should call repo with values in request and return the Member`() {
-        val lastname = generateRandomHexString()
-        val firstname = generateRandomHexString()
+        val memberDB = generateRandomMemberDB()
+        val request = MemberCreationReq(memberDB.lastname, memberDB.firstname)
 
-        val request = MemberCreationReq(lastname, firstname)
-        val memberDB = testMemberDB().copy(lastname = lastname, firstname = firstname)
-
-        every { memberRepo.createMember(lastname, firstname) } returns memberDB
+        every { memberRepo.createMember(request.lastname, request.firstname) } returns memberDB
 
         assertEquals(memberAdapter.add(request), memberDB.toMember())
 
-        verify { memberRepo.createMember(lastname, firstname) }
+        verify { memberRepo.createMember(request.lastname, request.firstname) }
     }
 
     @Test
     fun `update should transmit id and exploded MemberPartial to repo and return the Member`() {
-        val id = UUID.randomUUID()
-        val lastname = generateRandomHexString()
-        val firstname = generateRandomHexString()
 
-        val partial = MemberPartial(
-            lastname = lastname,
-            firstname = firstname,
-            profilePictureLink = null
-        )
-        val memberDB = MemberDB(
-            id = id,
-            lastname = lastname,
-            firstname = firstname,
-            contacts = emptySet(),
-            profilePictureLink = null
-        )
+        val memberDB = generateRandomMemberDB()
+        val partial = MemberPartial.empty().copy(lastname = memberDB.lastname)
 
         every { memberRepo.updatePartial(
-            id = id,
+            id = memberDB.id,
             lastname = partial.lastname,
             firstname = partial.firstname,
             profilePictureLink = partial.profilePictureLink
         ) } returns Unit
-        every { memberRepo.findById(id) } returns Optional.of(memberDB)
-        every { memberRepo.getParticipations(id) } returns emptySet()
+        every { memberRepo.findById(memberDB.id) } returns Optional.of(memberDB)
+        every { memberRepo.getParticipations(memberDB.id) } returns emptySet()
 
-        assertEquals(memberAdapter.update(id, partial), memberDB.toMember())
+        assertEquals(memberAdapter.update(memberDB.id, partial), memberDB.toMember())
 
         verify { memberRepo.updatePartial(
-            id = id,
-            lastname = lastname,
-            firstname = firstname,
-            profilePictureLink = null
+            id = memberDB.id,
+            lastname = partial.lastname,
+            firstname = partial.firstname,
+            profilePictureLink = partial.profilePictureLink
         ) }
-        verify { memberRepo.findById(id) }
-        verify { memberRepo.getParticipations(id) }
+        verify { memberRepo.findById(memberDB.id) }
+        verify { memberRepo.getParticipations(memberDB.id) }
     }
 
     @Test
     fun `addContact should call repo with contact values and return the updated Member`() {
         val id = UUID.randomUUID()
-        val platform = generateRandomHexString()
-        val link = generateRandomHexString(2)
+        val contact = generateRandomContactDB(id)
+        val member = generateRandomMemberDB().copy(id = id, contacts = setOf(contact))
 
-        val contact = ContactDB(
-            id = UUID.randomUUID(),
-            memberId = id,
-            platform = platform,
-            link = link
-        )
-        val member = MemberDB(
-            id = id,
-            lastname = generateRandomHexString(),
-            firstname = generateRandomHexString(),
-            contacts = setOf(contact),
-            profilePictureLink = null
-        )
-
-        every { memberRepo.addContact(id, platform, link) } returns Unit
+        every { memberRepo.addContact(id, contact.platform, contact.link) } returns Unit
         every { memberRepo.findById(id) } returns Optional.of(member)
         every { memberRepo.getParticipations(id) } returns emptySet()
 
-        assertEquals(memberAdapter.addContact(id, platform, link), member.toMember())
+        assertEquals(memberAdapter.addContact(id, contact.platform, contact.link), member.toMember())
 
-        verify { memberRepo.addContact(id, platform, link) }
+        verify { memberRepo.addContact(id, contact.platform, contact.link) }
         verify { memberRepo.findById(id) }
         verify { memberRepo.getParticipations(id) }
     }
@@ -167,16 +140,6 @@ class MemberAdapterTest {
         assertEquals(memberAdapter.existsById(id), exists)
 
         verify { memberRepo.existsById(id) }
-    }
-
-    private fun testMemberDB(): MemberDB {
-        return MemberDB(
-            id = UUID.randomUUID(),
-            lastname = generateRandomHexString(),
-            firstname = generateRandomHexString(),
-            contacts = emptySet(),
-            profilePictureLink = null,
-        )
     }
 
 }

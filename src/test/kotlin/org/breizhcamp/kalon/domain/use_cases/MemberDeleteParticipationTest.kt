@@ -5,9 +5,9 @@ import io.mockk.Runs
 import io.mockk.every
 import io.mockk.just
 import io.mockk.verify
-import org.breizhcamp.kalon.domain.entities.Member
 import org.breizhcamp.kalon.domain.use_cases.ports.MemberPort
 import org.breizhcamp.kalon.domain.use_cases.ports.ParticipationPort
+import org.breizhcamp.kalon.testUtils.generateRandomMember
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -29,27 +29,19 @@ class MemberDeleteParticipationTest {
     @Autowired
     private lateinit var memberDeleteParticipation: MemberDeleteParticipation
 
-    private val id = UUID.randomUUID()
-    private val teamId = UUID.randomUUID()
-    private val eventId = 1
-
-    private val testMember = Member(
-        id = id,
-        lastname = "LUCAS",
-        firstname = "Claire",
-        contacts = emptySet(),
-        profilePictureLink = null,
-        participations = emptySet()
-    )
-
     @Test
     fun `should call port to delete participation`() {
-        every { participationPort.removeByIds(teamId, id, eventId) } just Runs
-        every { memberPort.getById(id) } returns Optional.of(testMember)
+        val teamId = UUID.randomUUID()
+        val eventId = 1
 
-        assertEquals(memberDeleteParticipation.deleteParticipation(id, teamId, eventId), testMember)
+        val member = generateRandomMember()
 
-        verify { participationPort.removeByIds(teamId, id, eventId) }
-        verify { memberPort.getById(id) }
+        every { participationPort.removeByIds(teamId, member.id, eventId) } just Runs
+        every { memberPort.getById(member.id) } returns Optional.of(member)
+
+        assertEquals(memberDeleteParticipation.deleteParticipation(member.id, teamId, eventId), member)
+
+        verify { participationPort.removeByIds(teamId, member.id, eventId) }
+        verify { memberPort.getById(member.id) }
     }
 }

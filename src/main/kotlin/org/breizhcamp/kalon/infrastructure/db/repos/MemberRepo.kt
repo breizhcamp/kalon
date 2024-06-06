@@ -17,6 +17,17 @@ interface MemberRepo: JpaRepository<MemberDB, UUID>, MemberRepoCustom {
     """, nativeQuery = true)
     fun addContact(memberId: UUID, platform: String, link: String)
 
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+        DELETE FROM ContactDB c WHERE c.id = ?1
+    """)
+    fun removeContact(contactId: UUID)
+
+    @Query("""
+        SELECT COUNT(*) != 0 FROM ContactDB contact WHERE contact.memberId = ?1 AND contact.id = ?2
+    """)
+    fun existsContactByIds(id: UUID, contactId: UUID): Boolean
+
     @Query("""
         INSERT INTO member(lastname, firstname) 
         VALUES (?, ?)

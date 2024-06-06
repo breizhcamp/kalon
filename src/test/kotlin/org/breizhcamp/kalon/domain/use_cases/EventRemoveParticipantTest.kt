@@ -5,9 +5,9 @@ import io.mockk.Runs
 import io.mockk.every
 import io.mockk.just
 import io.mockk.verify
-import org.breizhcamp.kalon.domain.entities.Event
 import org.breizhcamp.kalon.domain.use_cases.ports.EventPort
 import org.breizhcamp.kalon.domain.use_cases.ports.ParticipationPort
+import org.breizhcamp.kalon.testUtils.generateRandomEvent
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -29,31 +29,19 @@ class EventRemoveParticipantTest {
     @Autowired
     private lateinit var eventRemoveParticipant: EventRemoveParticipant
 
-    private val memberId = UUID.randomUUID()
-    private val teamId = UUID.randomUUID()
-
-    private val testEvent = Event(
-        id = 1,
-        name = "Breizh camp 2024",
-        year = 2024,
-        debutEvent = null,
-        finEvent = null,
-        debutCFP = null,
-        finCFP = null,
-        debutInscription = null,
-        finInscription = null,
-        eventParticipants = emptySet(),
-        website = null,
-    )
-
     @Test
     fun `should call port to remove participant`() {
-        every { participationPort.removeByIds(teamId, memberId, 1) } just Runs
-        every { eventPort.getById(1) } returns Optional.of(testEvent)
+        val teamId = UUID.randomUUID()
+        val memberId = UUID.randomUUID()
 
-        assertEquals(eventRemoveParticipant.removeParticipant(1, memberId, teamId), testEvent)
+        val event = generateRandomEvent()
 
-        verify { participationPort.removeByIds(teamId, memberId, 1) }
-        verify { eventPort.getById(1) }
+        every { participationPort.removeByIds(teamId, memberId, event.id) } just Runs
+        every { eventPort.getById(event.id) } returns Optional.of(event)
+
+        assertEquals(eventRemoveParticipant.removeParticipant(event.id, memberId, teamId), event)
+
+        verify { participationPort.removeByIds(teamId, memberId, event.id) }
+        verify { eventPort.getById(event.id) }
     }
 }

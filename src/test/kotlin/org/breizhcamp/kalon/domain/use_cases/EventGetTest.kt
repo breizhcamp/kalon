@@ -3,8 +3,8 @@ package org.breizhcamp.kalon.domain.use_cases
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.every
 import io.mockk.verify
-import org.breizhcamp.kalon.domain.entities.Event
 import org.breizhcamp.kalon.domain.use_cases.ports.EventPort
+import org.breizhcamp.kalon.testUtils.generateRandomEvent
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.beans.factory.annotation.Autowired
@@ -22,25 +22,11 @@ class EventGetTest {
     @Autowired
     private lateinit var eventGet: EventGet
 
-    private val testEvent = Event(
-        id = 1,
-        name = null,
-        year = 2024,
-        debutEvent = null,
-        finEvent = null,
-        debutCFP = null,
-        finCFP = null,
-        debutInscription = null,
-        finInscription = null,
-        eventParticipants = emptySet(),
-        website = null,
-    )
-
     @Test
     fun `should call port to get event`() {
         every {
             eventPort.getById(1)
-        } returns Optional.of(testEvent)
+        } returns Optional.of(generateRandomEvent())
 
         assert(eventGet.get(1).isPresent)
 

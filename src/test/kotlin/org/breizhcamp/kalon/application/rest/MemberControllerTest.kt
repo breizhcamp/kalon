@@ -7,8 +7,12 @@ import io.mockk.verify
 import org.breizhcamp.kalon.application.dto.MemberCreationReq
 import org.breizhcamp.kalon.application.dto.MemberDTO
 import org.breizhcamp.kalon.application.handlers.HandleNotFound
-import org.breizhcamp.kalon.domain.entities.*
+import org.breizhcamp.kalon.domain.entities.MemberFilter
+import org.breizhcamp.kalon.domain.entities.MemberPartial
+import org.breizhcamp.kalon.domain.entities.MemberParticipation
+import org.breizhcamp.kalon.domain.entities.Order
 import org.breizhcamp.kalon.domain.use_cases.*
+import org.breizhcamp.kalon.testUtils.*
 import org.hibernate.type.descriptor.java.CoercionHelper.toLong
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
@@ -23,6 +27,8 @@ import org.springframework.http.HttpStatusCode
 import org.springframework.http.ResponseEntity
 import org.springframework.test.context.junit.jupiter.SpringExtension
 import java.util.*
+import kotlin.math.absoluteValue
+import kotlin.random.Random
 
 @ExtendWith(SpringExtension::class)
 @ExtendWith(OutputCaptureExtension::class)
@@ -30,10 +36,7 @@ import java.util.*
 class MemberControllerTest {
 
     @MockkBean
-    private lateinit var memberList: MemberList
-
-    @MockkBean
-    private lateinit var memberAdd: MemberAdd
+    private lateinit var memberCRUD: MemberCRUD
 
     @MockkBean
     private lateinit var memberCreateParticipation: MemberCreateParticipation
@@ -42,13 +45,10 @@ class MemberControllerTest {
     private lateinit var memberDeleteParticipation: MemberDeleteParticipation
 
     @MockkBean
-    private lateinit var memberGet: MemberGet
+    private lateinit var memberCreateContact: MemberCreateContact
 
     @MockkBean
-    private lateinit var memberUpdate: MemberUpdate
-
-    @MockkBean
-    private lateinit var memberAddContact: MemberAddContact
+    private lateinit var memberDeleteContact: MemberDeleteContact
 
     @MockkBean
     private lateinit var handleNotFound: HandleNotFound
@@ -60,9 +60,13 @@ class MemberControllerTest {
     fun `listAll should log, call memberList with empty filter and return a list of UUIDs`(
         output: CapturedOutput
     ) {
-        val returned = listOf(0, 1, 2).map { testMember(it) }
+        val returned = listOf(
+            generateRandomMember(),
+            generateRandomMember(),
+            generateRandomMember()
+        )
         every {
-            memberList.list(MemberFilter.empty())
+            memberCRUD.list(MemberFilter.empty())
         } returns returned.sortedBy { "${it.lastname}${it.firstname}" }
 
         assertEquals(
@@ -74,76 +78,67 @@ class MemberControllerTest {
             "Listing all Members by their IDs"
         ))
 
-        verify { memberList.list(MemberFilter.empty()) }
+        verify { memberCRUD.list(MemberFilter.empty()) }
     }
 
     @Test
     fun `addMember should log, call memberAdd with request and return MemberDTO`(
         output: CapturedOutput
     ) {
-        val lastname = "LUCAS"
-        val firstname = "Claire"
-        val id = UUID.randomUUID()
+        val req = MemberCreationReq(generateRandomHexString(), generateRandomHexString())
+        val member = generateRandomMember().copy(lastname = req.lastname, firstname = req.firstname)
 
-        every { memberAdd.add(MemberCreationReq(lastname, firstname)) } returns Member(
-            lastname = lastname,
-            firstname = firstname,
-            id = id,
-            contacts = emptySet(),
-            participations = emptySet(),
-            profilePictureLink = null
-        )
+        every { memberCRUD.add(req) } returns member
 
         assertEquals(
-            memberController.addMember(MemberCreationReq(lastname, firstname)),
-            MemberDTO(id, lastname, firstname, emptyList(), null, emptyList())
+            memberController.addMember(req),
+            member.toDto()
         )
         assert(output.contains(
-            "Adding Member with values lastname=${lastname} firstname=${firstname}"
+            "Adding Member with values lastname=${req.lastname} firstname=${req.firstname}"
         ))
 
-        verify { memberAdd.add(MemberCreationReq(lastname, firstname)) }
+        verify { memberCRUD.add(req) }
     }
 
     @Test
     fun `filterMembers should log, call memberList with request and return a list of MemberDTOs`(
         output: CapturedOutput
     ) {
-        val limit = 2
-        val members = listOf(0, 1, 2)
-            .map { testMember(it) }
+        val limit = Random.nextInt(1, 4)
+        val members = (0..5)
+            .map { generateRandomMember() }
             .sortedBy { "${it.lastname}${it.firstname}" }
             .take(limit)
         val filter = MemberFilter.empty().copy(limit = toLong(limit))
 
-        every { memberList.list(filter) } returns members
+        every { memberCRUD.list(filter) } returns members
 
         assertEquals(
             memberController.filterMembers(filter),
-            members.map { it.toDto() }
+            members.take(limit).map { it.toDto() }
         )
         assert(output.contains("Filtering $limit Members with ${Order.ASC} name order"))
 
-        verify { memberList.list(filter) }
+        verify { memberCRUD.list(filter) }
     }
 
     @Test
     fun `getById should log, call handleNotFound and memberGet and return OK and the MemberDTO if Member found`(
         output: CapturedOutput
     ) {
-        val id = UUID.randomUUID()
-        val member = testMember().copy(id = id)
+        val member = generateRandomMember()
 
-        every { handleNotFound.memberNotFound(id) } returns false
-        every { memberGet.getById(id) } returns Optional.of(member)
+        every { handleNotFound.memberNotFound(member.id) } returns false
+        every { memberCRUD.getById(member.id) } returns Optional.of(member)
 
-        assertEquals(memberController.getById(id), ResponseEntity.ok(member.toDto()))
+        assertEquals(memberController.getById(member.id), ResponseEntity.ok(member.toDto()))
         assert(output.contains(
-            "Retrieving Member:$id"
+            "Retrieving Member:${member.id}"
         ))
 
-        verify { handleNotFound.memberNotFound(id) }
-        verify { memberGet.getById(id) }
+        verify { handleNotFound.memberNotFound(member.id) }
+        verify { memberCRUD.getById(member.id) }
     }
 
     @Test
@@ -153,7 +148,7 @@ class MemberControllerTest {
         val id = UUID.randomUUID()
 
         every { handleNotFound.memberNotFound(id) } returns true
-        every { memberGet.getById(id) } returns Optional.empty()
+        every { memberCRUD.getById(id) } returns Optional.empty()
 
         assertEquals(memberController.getById(id), ResponseEntity<MemberDTO>(HttpStatusCode.valueOf(404)))
         assert(output.contains(
@@ -161,28 +156,27 @@ class MemberControllerTest {
         ))
 
         verify { handleNotFound.memberNotFound(id) }
-        verify { memberGet.getById(id) wasNot Called}
+        verify { memberCRUD.getById(id) wasNot Called}
     }
 
     @Test
     fun `update should log, call handleNotFound and memberUpdate and return OK and MemberDTO if Member found`(
         output: CapturedOutput
     ) {
-        val id = UUID.randomUUID()
-        val lastname = "LUCAS-LAMMENS"
+        val lastname = generateRandomHexString()
         val partial = MemberPartial.empty().copy(lastname = lastname)
-        val memberAfter = testMember(0).copy(id = id, lastname = lastname)
+        val member = generateRandomMember().copy(lastname = lastname)
 
-        every { handleNotFound.memberNotFound(id) } returns false
-        every { memberUpdate.update(id, partial) } returns memberAfter
+        every { handleNotFound.memberNotFound(member.id) } returns false
+        every { memberCRUD.update(member.id, partial) } returns member
 
-        assertEquals(memberController.update(id, partial.toDto()), ResponseEntity.ok(memberAfter.toDto()))
+        assertEquals(memberController.update(member.id, partial.toDto()), ResponseEntity.ok(member.toDto()))
         assert(output.contains(
-            "Updating Member:$id with values lastname=${partial.lastname} firstname=${partial.firstname} and profilePictureLink=${partial.profilePictureLink}"
+            "Updating Member:${member.id} with values lastname=${partial.lastname} firstname=${partial.firstname} and profilePictureLink=${partial.profilePictureLink}"
         ))
 
-        verify { handleNotFound.memberNotFound(id) }
-        verify { memberUpdate.update(id, partial) }
+        verify { handleNotFound.memberNotFound(member.id) }
+        verify { memberCRUD.update(member.id, partial) }
     }
 
     @Test
@@ -193,7 +187,7 @@ class MemberControllerTest {
         val partial = MemberPartial.empty()
 
         every { handleNotFound.memberNotFound(any()) } returns true
-        every { memberUpdate.update(any(), any()) }
+        every { memberCRUD.update(any(), any()) }
 
         assertEquals(memberController.update(id, partial.toDto()), ResponseEntity<MemberDTO>(HttpStatusCode.valueOf(404)))
         assert(output.contains(
@@ -201,18 +195,18 @@ class MemberControllerTest {
         ))
 
         verify { handleNotFound.memberNotFound(id) }
-        verify { memberUpdate.update(id, partial) wasNot Called }
+        verify { memberCRUD.update(id, partial) wasNot Called }
     }
 
     @Test
     fun `addContact should log, call handleNotFound and memberAddContact and return OK and the MemberDTO if Member found`(
         output: CapturedOutput
     ) {
-        val contact = Contact(id = UUID.randomUUID(), platform = "Example", link = "example.org/cllucas")
-        val member = testMember().copy(contacts = setOf(contact))
+        val contact = generateRandomContact()
+        val member = generateRandomMember().copy(contacts = setOf(contact))
 
         every { handleNotFound.memberNotFound(member.id) } returns false
-        every { memberAddContact.addContact(member.id, contact.platform, contact.link) } returns member
+        every { memberCreateContact.create(member.id, contact.platform, contact.link) } returns member
 
         assertEquals(memberController.addContact(member.id, contact.platform, contact.link), ResponseEntity.ok(member.toDto()))
         assert(output.contains(
@@ -220,18 +214,18 @@ class MemberControllerTest {
         ))
 
         verify { handleNotFound.memberNotFound(member.id) }
-        verify { memberAddContact.addContact(member.id, contact.platform, contact.link) }
+        verify { memberCreateContact.create(member.id, contact.platform, contact.link) }
     }
 
     @Test
     fun `addContact should log, call handleNotFound, not call memberAddContact and return NOT_FOUND if Member not found`(
         output: CapturedOutput
     ) {
-        val contact = Contact(id = UUID.randomUUID(), platform = "Example", link = "example.org/cllucas")
+        val contact = generateRandomContact()
         val id = UUID.randomUUID()
 
         every { handleNotFound.memberNotFound(id) } returns true
-        every { memberAddContact.addContact(any(), any(), any()) }
+        every { memberCreateContact.create(any(), any(), any()) }
 
         assertEquals(
             memberController.addContact(id, contact.platform, contact.link),
@@ -242,37 +236,75 @@ class MemberControllerTest {
         ))
 
         verify { handleNotFound.memberNotFound(id) }
-        verify { memberAddContact.addContact(id, contact.platform, contact.link) wasNot Called}
+        verify { memberCreateContact.create(id, contact.platform, contact.link) wasNot Called}
+    }
+
+    @Test
+    fun `deleteContact should log, call handleNotFound and memberRemoveContact and return OK and the MemberDTO if all found`(
+        output: CapturedOutput
+    ) {
+        val contact = generateRandomContact()
+        val member = generateRandomMember().copy(contacts = setOf(contact))
+
+        every { handleNotFound.memberNotFound(member.id) } returns false
+        every { handleNotFound.contactNotFound(member.id, contact.id) } returns false
+        every { memberDeleteContact.delete(member.id, contact.id) } returns member
+
+        val response = memberController.deleteContact(member.id, contact.id)
+        assert(output.contains("Removing Contact:${contact.id} from Member:${member.id}"))
+        assertEquals(response, ResponseEntity.ok(member.toDto()))
+
+        verify { handleNotFound.memberNotFound(member.id) }
+        verify { handleNotFound.contactNotFound(member.id, contact.id) }
+        verify { memberDeleteContact.delete(member.id, contact.id) }
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = [0, 1])
+    fun `deleteContact should log, call handleNotFound, not call memberRemoveContact and return NOT_FOUND if any not found`(
+        index: Int,
+        output: CapturedOutput
+    ) {
+        val contact = generateRandomContact()
+        val member = generateRandomMember().copy(contacts = setOf(contact))
+
+        every { handleNotFound.memberNotFound(member.id) } returns (index == 0)
+        every { handleNotFound.contactNotFound(member.id, contact.id) } returns (index==1)
+        every { memberDeleteContact.delete(member.id, contact.id) } returns member
+
+        val response = memberController.deleteContact(member.id, contact.id)
+        assert(output.contains("Removing Contact:${contact.id} from Member:${member.id}"))
+        assertEquals(response, ResponseEntity<MemberDTO>(HttpStatusCode.valueOf(404)))
+
+        verify { handleNotFound.memberNotFound(member.id) }
+        verify(exactly = if (index <= 0) 0 else 1) { handleNotFound.contactNotFound(member.id, contact.id) }
+        verify { memberDeleteContact.delete(member.id, contact.id) wasNot Called }
     }
 
     @Test
     fun `addParticipation should log, call handleNotFound and memberAddParticipation and return OK and the MemberDTO if all found`(
         output: CapturedOutput
     ) {
-        val id = UUID.randomUUID()
-        val teamId = UUID.randomUUID()
-        val eventId = 1
+        val team = generateRandomTeam()
+        val event = generateRandomEvent()
 
-        val team = Team(teamId, "Bureau", null, emptySet())
-        val event = Event(eventId, null, 2024, null, null, null, null, null, null, null, emptySet())
+        val member = generateRandomMember().copy(participations = setOf(MemberParticipation(team, event)))
 
-        val member = testMember(1).copy(id = id, participations = setOf(MemberParticipation(team, event)))
+        every { handleNotFound.memberNotFound(member.id) } returns false
+        every { handleNotFound.teamNotFound(team.id) } returns false
+        every { handleNotFound.eventNotFound(event.id) } returns false
+        every { memberCreateParticipation.createParticipation(member.id, team.id, event.id) } returns member
 
-        every { handleNotFound.memberNotFound(id) } returns false
-        every { handleNotFound.teamNotFound(teamId) } returns false
-        every { handleNotFound.eventNotFound(eventId) } returns false
-        every { memberCreateParticipation.createParticipation(id, teamId, eventId) } returns member
-
-        val response = memberController.addParticipation(id, eventId, teamId)
+        val response = memberController.addParticipation(member.id, event.id, team.id)
         assert(output.contains(
-            "Adding Participation:<Event:$eventId, Team:$teamId> to Member:$id"
+            "Adding Participation:<Event:${event.id}, Team:${team.id}> to Member:${member.id}"
         ))
         assertEquals(response, ResponseEntity.ok(member.toDto()))
 
-        verify { handleNotFound.memberNotFound(id) }
-        verify { handleNotFound.teamNotFound(teamId) }
-        verify { handleNotFound.eventNotFound(eventId) }
-        verify { memberCreateParticipation.createParticipation(id, teamId, eventId) }
+        verify { handleNotFound.memberNotFound(member.id) }
+        verify { handleNotFound.teamNotFound(team.id) }
+        verify { handleNotFound.eventNotFound(event.id) }
+        verify { memberCreateParticipation.createParticipation(member.id, team.id, event.id) }
     }
 
     @ParameterizedTest
@@ -283,7 +315,7 @@ class MemberControllerTest {
     ) {
         val id = UUID.randomUUID()
         val teamId = UUID.randomUUID()
-        val eventId = 1
+        val eventId = Random.nextInt().absoluteValue
 
         every { handleNotFound.memberNotFound(id) } returns (index==0)
         every { handleNotFound.teamNotFound(teamId) } returns (index==1)
@@ -306,29 +338,28 @@ class MemberControllerTest {
     fun `removeParticipation should log, call handleNotFound and memberDeleteParticipation and return OK and the MemberDTO if all found`(
         output: CapturedOutput
     ) {
-        val id = UUID.randomUUID()
         val teamId = UUID.randomUUID()
         val eventId = 1
 
-        val member = testMember(1).copy(id = id)
+        val member = generateRandomMember()
 
-        every { handleNotFound.memberNotFound(id) } returns false
+        every { handleNotFound.memberNotFound(member.id) } returns false
         every { handleNotFound.teamNotFound(teamId) } returns false
         every { handleNotFound.eventNotFound(eventId) } returns false
-        every { handleNotFound.participationNotFound(teamId, id, eventId) } returns false
-        every { memberDeleteParticipation.deleteParticipation(id, teamId, eventId) } returns member
+        every { handleNotFound.participationNotFound(teamId, member.id, eventId) } returns false
+        every { memberDeleteParticipation.deleteParticipation(member.id, teamId, eventId) } returns member
 
-        val response = memberController.removeParticipation(id, eventId, teamId)
+        val response = memberController.removeParticipation(member.id, eventId, teamId)
         assert(output.contains(
-            "Removing Participation:<Event:$eventId, Team:$teamId> from Member:$id"
+            "Removing Participation:<Event:$eventId, Team:$teamId> from Member:${member.id}"
         ))
         assertEquals(response, ResponseEntity.ok(member.toDto()))
 
-        verify { handleNotFound.memberNotFound(id) }
+        verify { handleNotFound.memberNotFound(member.id) }
         verify { handleNotFound.teamNotFound(teamId) }
         verify { handleNotFound.eventNotFound(eventId) }
-        verify { handleNotFound.participationNotFound(teamId, id, eventId) }
-        verify { memberDeleteParticipation.deleteParticipation(id, teamId, eventId) }
+        verify { handleNotFound.participationNotFound(teamId, member.id, eventId) }
+        verify { memberDeleteParticipation.deleteParticipation(member.id, teamId, eventId) }
     }
 
     @ParameterizedTest
@@ -339,7 +370,7 @@ class MemberControllerTest {
     ) {
         val id = UUID.randomUUID()
         val teamId = UUID.randomUUID()
-        val eventId = 1
+        val eventId = Random.nextInt().absoluteValue
 
         every { handleNotFound.memberNotFound(id) } returns (index==0)
         every { handleNotFound.teamNotFound(teamId) } returns (index==1)
@@ -358,19 +389,5 @@ class MemberControllerTest {
         verify(exactly = if (index <= 1) 0 else 1) { handleNotFound.eventNotFound(eventId) }
         verify(exactly = if (index <= 2) 0 else 1) { handleNotFound.participationNotFound(teamId, id, eventId) }
         verify { memberDeleteParticipation.deleteParticipation(id, teamId, eventId) wasNot Called }
-    }
-
-    private fun testMember(index: Int = 0): Member {
-        val lastnames = listOf("LUCAS", "THOMAZO", "DENIS")
-        val firstnames = listOf("Claire", "Alexandre", "Ophélia")
-
-        return Member(
-            lastname = lastnames[index],
-            firstname = firstnames[index],
-            id = UUID.randomUUID(),
-            contacts = emptySet(),
-            participations = emptySet(),
-            profilePictureLink = null
-        )
     }
 }

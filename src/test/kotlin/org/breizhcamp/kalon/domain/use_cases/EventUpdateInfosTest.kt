@@ -3,9 +3,10 @@ package org.breizhcamp.kalon.domain.use_cases
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.every
 import io.mockk.verify
-import org.breizhcamp.kalon.domain.entities.Event
 import org.breizhcamp.kalon.domain.entities.EventPartial
 import org.breizhcamp.kalon.domain.use_cases.ports.EventPort
+import org.breizhcamp.kalon.testUtils.generateRandomEvent
+import org.breizhcamp.kalon.testUtils.generateRandomHexString
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -23,43 +24,15 @@ class EventUpdateInfosTest {
     @Autowired
     private lateinit var eventUpdateInfos: EventUpdateInfos
 
-    private val testEventBefore = Event(
-        id = 1,
-        name = null,
-        year = 2024,
-        debutEvent = null,
-        finEvent = null,
-        debutCFP = null,
-        finCFP = null,
-        debutInscription = null,
-        finInscription = null,
-        eventParticipants = emptySet(),
-        website = null,
-    )
-
-    private val updateValues = EventPartial(
-        name = "Breizh camp 2024",
-        year = null,
-        debutEvent = null,
-        finEvent = null,
-        debutCFP = null,
-        finCFP = null,
-        debutInscription = null,
-        finInscription = null,
-        website = "example.com"
-    )
-
-    private val testEventAfter = testEventBefore.copy(
-        name = "Breizh camp 2024",
-        website = "example.com"
-    )
-
     @Test
     fun `should call port to update infos`() {
-        every { eventPort.updateInfos(testEventBefore.id, updateValues) } returns testEventAfter
+        val eventBefore = generateRandomEvent()
+        val partial = EventPartial.empty().copy(name = generateRandomHexString())
+        val eventAfter = eventBefore.copy(name = partial.name)
+        every { eventPort.updateInfos(eventBefore.id, partial) } returns eventAfter
 
-        assertEquals(eventUpdateInfos.updateInfos(testEventBefore.id, updateValues), testEventAfter)
+        assertEquals(eventUpdateInfos.updateInfos(eventBefore.id, partial), eventAfter)
 
-        verify { eventPort.updateInfos(testEventBefore.id, updateValues) }
+        verify { eventPort.updateInfos(eventBefore.id, partial) }
     }
 }

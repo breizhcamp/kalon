@@ -1,6 +1,6 @@
 package org.breizhcamp.kalon.domain.entities
 
-import java.util.UUID
+import java.util.*
 
 data class Contact(
     val id: UUID,

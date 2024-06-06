@@ -4,8 +4,10 @@ import com.ninjasquad.springmockk.MockkBean
 import io.mockk.every
 import io.mockk.verify
 import org.breizhcamp.kalon.domain.use_cases.ports.TeamPort
-import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.extension.ExtendWith
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
 import org.springframework.test.context.junit.jupiter.SpringExtension
@@ -21,18 +23,14 @@ class TeamExistsTest {
     @Autowired
     private lateinit var teamExists: TeamExists
 
-    private val existsUUID = UUID.randomUUID()
-    private val doesNotExistUUID = UUID.randomUUID()
+    @ParameterizedTest
+    @ValueSource(booleans = [false, true])
+    fun `should call port to test existence`(exists: Boolean) {
+        val id = UUID.randomUUID()
+        every { teamPort.existsById(id) } returns exists
 
-    @Test
-    fun `should call port to test existence`() {
-        every { teamPort.existsById(existsUUID) } returns true
-        every { teamPort.existsById(doesNotExistUUID) } returns false
+        assertEquals(teamExists.exists(id), exists)
 
-        assert(teamExists.exists(existsUUID))
-        assert(!teamExists.exists(doesNotExistUUID))
-
-        verify { teamPort.existsById(existsUUID) }
-        verify { teamPort.existsById(doesNotExistUUID) }
+        verify { teamPort.existsById(id) }
     }
 }

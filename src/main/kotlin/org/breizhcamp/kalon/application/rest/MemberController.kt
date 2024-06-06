@@ -15,13 +15,11 @@ private val logger = KotlinLogging.logger {}
 @RestController
 @RequestMapping("/api/members")
 class MemberController (
-    private val memberList: MemberList,
-    private val memberAdd: MemberAdd,
+    private val memberCRUD: MemberCRUD,
     private val memberCreateParticipation: MemberCreateParticipation,
     private val memberDeleteParticipation: MemberDeleteParticipation,
-    private val memberGet: MemberGet,
-    private val memberUpdate: MemberUpdate,
-    private val memberAddContact: MemberAddContact,
+    private val memberCreateContact: MemberCreateContact,
+    private val memberDeleteContact: MemberDeleteContact,
     private val handleNotFound: HandleNotFound,
 ) {
 
@@ -29,21 +27,21 @@ class MemberController (
     fun listAll(): List<UUID> {
         logger.info { "Listing all Members by their IDs" }
 
-        return memberList.list(MemberFilter.empty()).map { it.toDto().id }
+        return memberCRUD.list(MemberFilter.empty()).map { it.toDto().id }
     }
 
     @PostMapping
     fun addMember(@RequestBody creationReq: MemberCreationReq) : MemberDTO {
         logger.info { "Adding Member with values lastname=${creationReq.lastname} firstname=${creationReq.firstname}"}
 
-        return memberAdd.add(creationReq).toDto()
+        return memberCRUD.add(creationReq).toDto()
     }
 
     @PostMapping("/filter")
     fun filterMembers(@RequestBody filter: MemberFilter): List<MemberDTO> {
         logger.info { "Filtering ${filter.limit?:"all"} Members with ${filter.nameOrder?:Order.ASC} name order" }
 
-        return memberList.list(filter).map { it.toDto() }
+        return memberCRUD.list(filter).map { it.toDto() }
     }
 
     @GetMapping("/{id}")
@@ -53,7 +51,7 @@ class MemberController (
         if (handleNotFound.memberNotFound(id))
             return ResponseEntity.notFound().build()
 
-        return ResponseEntity.ok(memberGet.getById(id).get().toDto())
+        return ResponseEntity.ok(memberCRUD.getById(id).get().toDto())
     }
 
     @PutMapping("/{id}")
@@ -63,7 +61,7 @@ class MemberController (
         if (handleNotFound.memberNotFound(id))
             return ResponseEntity.notFound().build()
 
-        return ResponseEntity.ok(memberUpdate.update(id, member.toObject()).toDto())
+        return ResponseEntity.ok(memberCRUD.update(id, member.toObject()).toDto())
     }
 
     @PostMapping("/{id}/contact")
@@ -73,7 +71,18 @@ class MemberController (
         if (handleNotFound.memberNotFound(id))
             return ResponseEntity.notFound().build()
 
-        return ResponseEntity.ok(memberAddContact.addContact(id, platform, link).toDto())
+        return ResponseEntity.ok(memberCreateContact.create(id, platform, link).toDto())
+    }
+
+    @DeleteMapping("/{id}/contact/{contactId}")
+    fun deleteContact(@PathVariable id: UUID, @PathVariable contactId: UUID): ResponseEntity<MemberDTO> {
+        logger.info { "Removing Contact:$contactId from Member:$id" }
+
+        if (handleNotFound.memberNotFound(id)
+            || handleNotFound.contactNotFound(id, contactId))
+            return ResponseEntity.notFound().build()
+
+        return ResponseEntity.ok(memberDeleteContact.delete(id, contactId).toDto())
     }
 
     @PostMapping("/{id}/participation/{eventId}/{teamId}")

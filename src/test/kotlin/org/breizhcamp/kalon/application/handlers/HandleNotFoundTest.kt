@@ -9,38 +9,29 @@ import org.breizhcamp.kalon.domain.use_cases.ParticipationExists
 import org.breizhcamp.kalon.domain.use_cases.TeamExists
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
 import org.springframework.boot.test.system.CapturedOutput
 import org.springframework.boot.test.system.OutputCaptureExtension
 import org.springframework.test.context.junit.jupiter.SpringExtension
 import java.util.*
+import kotlin.random.Random
 
 @ExtendWith(SpringExtension::class)
 @ExtendWith(OutputCaptureExtension::class)
 @WebMvcTest(HandleNotFound::class)
 class HandleNotFoundTest {
 
-    private val uuidRegex = "[0-9a-fA-F]{8}\\b-[0-9a-fA-F]{4}\\b-[0-9a-fA-F]{4}\\b-[0-9a-fA-F]{4}\\b-[0-9a-fA-F]{12}"
-    private val integerRegex = "[0-9]+"
-    private fun notFoundLogPattern(obj: String, regex: String?) = Regex("${obj}${
-        if (regex == null) "" else ":$regex"
-    } not in database, returning a NOT_FOUND response")
-
     @MockkBean
     private lateinit var teamExists: TeamExists
-    private val teamExistsId = UUID.randomUUID()
-    private val teamDoesNotExistId = UUID.randomUUID()
 
     @MockkBean
     private lateinit var memberExists: MemberExists
-    private val memberExistsId = UUID.randomUUID()
-    private val memberDoesNotExistId = UUID.randomUUID()
 
     @MockkBean
     private lateinit var eventExists: EventExists
-    private val eventExistsId = 1
-    private val eventDoesNotExistId = 2
 
     @MockkBean
     private lateinit var participationExists: ParticipationExists
@@ -50,62 +41,105 @@ class HandleNotFoundTest {
 
     @Test
     fun `should return false and not log if member exists`(output: CapturedOutput) {
-        every { memberExists.exists(memberExistsId) } returns true
+        val memberId = UUID.randomUUID()
+        every { memberExists.exists(memberId) } returns true
 
-        assert(!handleNotFound.memberNotFound(memberExistsId))
+        assert(!handleNotFound.memberNotFound(memberId))
         assert(!output.contains(notFoundLogPattern("Member", uuidRegex)))
 
-        verify { memberExists.exists(memberExistsId) }
+        verify { memberExists.exists(memberId) }
     }
 
     @Test
     fun `should return true and log if member does not exist`(output: CapturedOutput) {
-        every { memberExists.exists(memberDoesNotExistId) } returns false
+        val memberId = UUID.randomUUID()
+        every { memberExists.exists(memberId) } returns false
 
-        assert(handleNotFound.memberNotFound(memberDoesNotExistId))
+        assert(handleNotFound.memberNotFound(memberId))
         assert(output.contains(notFoundLogPattern("Member", uuidRegex)))
 
-        verify { memberExists.exists(memberDoesNotExistId) }
+        verify { memberExists.exists(memberId) }
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = [0, 1])
+    fun `should return true and log if any does not exist`(index: Int, output: CapturedOutput) {
+        val memberId = UUID.randomUUID()
+        val contactId = UUID.randomUUID()
+
+        every { memberExists.exists(memberId) } returns (index != 0)
+        every { memberExists.contactExists(memberId, contactId) } returns (index != 1)
+
+        assert(handleNotFound.contactNotFound(memberId, contactId))
+        when (index) {
+            0 -> assert(output.contains(notFoundLogPattern("Member", uuidRegex)))
+            1 -> assert(output.contains(Regex("Contact:$uuidRegex for Member:$uuidRegex not in database, returning a NOT_FOUND response")))
+        }
+
+        verify { memberExists.exists(memberId) }
+        verify(exactly = if (index == 0) 0 else 1) { memberExists.contactExists(memberId, contactId) }
+    }
+
+    @Test
+    fun `should return false and not log if member and contact exist`(output: CapturedOutput) {
+        val memberId = UUID.randomUUID()
+        val contactId = UUID.randomUUID()
+
+        every { memberExists.exists(memberId) } returns true
+        every { memberExists.contactExists(memberId, contactId) } returns true
+
+        assert(!handleNotFound.contactNotFound(memberId, contactId))
+
+        verify { memberExists.exists(memberId) }
+        verify { memberExists.contactExists(memberId, contactId) }
     }
 
     @Test
     fun `should return false and not log if team exists`(output: CapturedOutput) {
-        every { teamExists.exists(teamExistsId) } returns true
+        val teamId = UUID.randomUUID()
 
-        assert(!handleNotFound.teamNotFound(teamExistsId))
+        every { teamExists.exists(teamId) } returns true
+
+        assert(!handleNotFound.teamNotFound(teamId))
         assert(!output.contains(notFoundLogPattern("Team", uuidRegex)))
 
-        verify { teamExists.exists(teamExistsId) }
+        verify { teamExists.exists(teamId) }
     }
 
     @Test
     fun `should return true and log if team does not exist`(output: CapturedOutput) {
-        every { teamExists.exists(teamDoesNotExistId) } returns false
+        val teamId = UUID.randomUUID()
 
-        assert(handleNotFound.teamNotFound(teamDoesNotExistId))
+        every { teamExists.exists(teamId) } returns false
+
+        assert(handleNotFound.teamNotFound(teamId))
         assert(output.contains(notFoundLogPattern("Team", uuidRegex)))
 
-        verify { teamExists.exists(teamDoesNotExistId) }
+        verify { teamExists.exists(teamId) }
     }
 
     @Test
     fun `should return false and not log if event exists`(output: CapturedOutput) {
-        every { eventExists.exists(eventExistsId) } returns true
+        val eventId = Random.nextInt()
 
-        assert(!handleNotFound.eventNotFound(eventExistsId))
+        every { eventExists.exists(eventId) } returns true
+
+        assert(!handleNotFound.eventNotFound(eventId))
         assert(!output.contains(notFoundLogPattern("Event", integerRegex)))
 
-        verify { eventExists.exists(eventExistsId) }
+        verify { eventExists.exists(eventId) }
     }
 
     @Test
     fun `should return true and log if event does not exist`(output: CapturedOutput) {
-        every { eventExists.exists(eventDoesNotExistId) } returns false
+        val eventId = Random.nextInt()
 
-        assert(handleNotFound.eventNotFound(eventDoesNotExistId))
+        every { eventExists.exists(eventId) } returns false
+
+        assert(handleNotFound.eventNotFound(eventId))
         assert(output.contains(notFoundLogPattern("Event", integerRegex)))
 
-        verify { eventExists.exists(eventDoesNotExistId) }
+        verify { eventExists.exists(eventId) }
     }
 
     @Test
@@ -127,5 +161,12 @@ class HandleNotFoundTest {
 
         verify { participationExists.exists(any(), any(), any()) }
     }
+
+    private val uuidRegex = "[0-9a-fA-F]{8}\\b-[0-9a-fA-F]{4}\\b-[0-9a-fA-F]{4}\\b-[0-9a-fA-F]{4}\\b-[0-9a-fA-F]{12}"
+    private val integerRegex = "[-+]*[0-9]+"
+
+    private fun notFoundLogPattern(obj: String, regex: String?) = Regex("${obj}${
+        if (regex == null) "" else ":$regex"
+    } not in database, returning a NOT_FOUND response")
 
 }

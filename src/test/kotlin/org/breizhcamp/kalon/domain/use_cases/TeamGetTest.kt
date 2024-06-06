@@ -3,11 +3,12 @@ package org.breizhcamp.kalon.domain.use_cases
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.every
 import io.mockk.verify
-import org.breizhcamp.kalon.domain.entities.Team
 import org.breizhcamp.kalon.domain.use_cases.ports.TeamPort
+import org.breizhcamp.kalon.testUtils.generateRandomTeam
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
 import org.springframework.test.context.junit.jupiter.SpringExtension
@@ -23,25 +24,19 @@ class TeamGetTest {
     @Autowired
     private lateinit var teamGet: TeamGet
 
-    private val testTeam = Team(
-        id = UUID.randomUUID(),
-        name = "Orga",
-        description = null,
-        participations = emptySet()
-    )
+    @ParameterizedTest
+    @ValueSource(booleans = [false, true])
+    fun `should call port to get`(exists: Boolean) {
+        val team = generateRandomTeam()
+        every { teamPort.getById(team.id) } returns
+                if (exists) Optional.of(team) else Optional.empty()
 
-    private val doesNotExistUUID = UUID.randomUUID()
+        val response = teamGet.getById(team.id)
+        assertEquals(response.isPresent, exists)
+        if (exists) {
+            assertEquals(response.get(), team)
+        }
 
-    @Test
-    fun `should call port to get`() {
-        every { teamPort.getById(testTeam.id) } returns Optional.of(testTeam)
-        every { teamPort.getById(doesNotExistUUID) } returns Optional.empty()
-
-        assert(teamGet.getById(testTeam.id).isPresent)
-        assertEquals(teamGet.getById(testTeam.id).get(), testTeam)
-        assert(teamGet.getById(doesNotExistUUID).isEmpty)
-
-        verify { teamPort.getById(testTeam.id) }
-        verify { teamPort.getById(doesNotExistUUID) }
+        verify { teamPort.getById(team.id) }
     }
 }

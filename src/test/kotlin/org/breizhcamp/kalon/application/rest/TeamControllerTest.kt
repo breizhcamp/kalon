@@ -8,8 +8,13 @@ import org.breizhcamp.kalon.application.dto.TeamCreationReq
 import org.breizhcamp.kalon.application.dto.TeamDTO
 import org.breizhcamp.kalon.application.dto.TeamPartialDTO
 import org.breizhcamp.kalon.application.handlers.HandleNotFound
-import org.breizhcamp.kalon.domain.entities.*
+import org.breizhcamp.kalon.domain.entities.TeamFilter
+import org.breizhcamp.kalon.domain.entities.TeamParticipation
 import org.breizhcamp.kalon.domain.use_cases.*
+import org.breizhcamp.kalon.testUtils.generateRandomEvent
+import org.breizhcamp.kalon.testUtils.generateRandomHexString
+import org.breizhcamp.kalon.testUtils.generateRandomMember
+import org.breizhcamp.kalon.testUtils.generateRandomTeam
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -57,7 +62,11 @@ class TeamControllerTest {
     fun `list should log, call teamList with an empty filter and return a list of UUIDs`(
         output: CapturedOutput
     ) {
-        val teams = listOf(0, 1, 2, 3).map(this::testTeam)
+        val teams = listOf(
+            generateRandomTeam(),
+            generateRandomTeam(),
+            generateRandomTeam()
+        )
         every { teamList.list(TeamFilter.empty()) } returns teams
 
         assertEquals(teamController.list(), teams.map { it.id })
@@ -72,14 +81,13 @@ class TeamControllerTest {
     fun `addTeam should log, call teamAdd with the request and return the TeamDTO`(
         output: CapturedOutput
     ) {
-        val name = "Comm"
-        val request = TeamCreationReq(name)
-        val created = testTeam().copy(name = name)
+        val request = TeamCreationReq(generateRandomHexString())
+        val created = generateRandomTeam().copy(name = request.name)
         every { teamAdd.add(request) } returns created
 
         assertEquals(teamController.addTeam(request), created.toDto())
         assert(output.contains(
-            "Adding Team with values name=$name"
+            "Adding Team with values name=${request.name}"
         ))
 
         verify { teamAdd.add(request) }
@@ -91,7 +99,7 @@ class TeamControllerTest {
     ) {
         val memberId = UUID.randomUUID()
         val filter = TeamFilter.empty().copy(memberId = memberId)
-        val team = testTeam()
+        val team = generateRandomTeam()
 
         every { teamList.list(filter) } returns listOf(team)
 
@@ -108,7 +116,7 @@ class TeamControllerTest {
         output: CapturedOutput
     ) {
         val id = UUID.randomUUID()
-        val team = testTeam(1).copy(id = id)
+        val team = generateRandomTeam().copy(id = id)
 
         every { handleNotFound.teamNotFound(id) } returns false
         every { teamGet.getById(id) } returns Optional.of(team)
@@ -145,9 +153,8 @@ class TeamControllerTest {
         output: CapturedOutput
     ) {
         val id = UUID.randomUUID()
-        val name = "Matériel"
-        val partial = TeamPartialDTO(name = name, description = null)
-        val teamAfter = testTeam().copy(id = id, name = name)
+        val partial = TeamPartialDTO(name = generateRandomHexString(), description = null)
+        val teamAfter = generateRandomTeam().copy(id = id, name = partial.name!!)
 
         every { handleNotFound.teamNotFound(id) } returns false
         every { teamUpdate.update(id, partial.toObject()) } returns teamAfter
@@ -184,29 +191,26 @@ class TeamControllerTest {
     fun `addParticipant should log, call handleNotFound and teamAddParticipation and return OK and the TeamDTO if all found`(
         output: CapturedOutput
     ) {
-        val id = UUID.randomUUID()
-        val memberId = UUID.randomUUID()
-        val eventId = 1
 
-        val member = Member(memberId, "LUCAS", "Claire", emptySet(), null, emptySet())
-        val event = Event(eventId, null, 2020, null, null, null, null, null, null, null, emptySet())
+        val member = generateRandomMember()
+        val event = generateRandomEvent()
 
-        val team = testTeam(2).copy(id = id, participations = setOf(TeamParticipation(member, event)))
+        val team = generateRandomTeam().copy(participations = setOf(TeamParticipation(member, event)))
 
-        every { handleNotFound.memberNotFound(memberId) } returns false
-        every { handleNotFound.teamNotFound(id) } returns false
-        every { handleNotFound.eventNotFound(eventId) } returns false
-        every { teamCreateParticipation.createParticipation(id, memberId, eventId) } returns team
+        every { handleNotFound.memberNotFound(member.id) } returns false
+        every { handleNotFound.teamNotFound(team.id) } returns false
+        every { handleNotFound.eventNotFound(event.id) } returns false
+        every { teamCreateParticipation.createParticipation(team.id, member.id, event.id) } returns team
 
-        assertEquals(teamController.addParticipant(id, memberId, eventId), ResponseEntity.ok(team.toDto()))
+        assertEquals(teamController.addParticipant(team.id, member.id, event.id), ResponseEntity.ok(team.toDto()))
         assert(output.contains(
-            "Adding Participation:<Member:$memberId, Event:$eventId> to Team:$id"
+            "Adding Participation:<Member:${member.id}, Event:${event.id}> to Team:${team.id}"
         ))
 
-        verify { handleNotFound.memberNotFound(memberId) }
-        verify { handleNotFound.teamNotFound(id) }
-        verify { handleNotFound.eventNotFound(eventId) }
-        verify { teamCreateParticipation.createParticipation(id, memberId, eventId) }
+        verify { handleNotFound.memberNotFound(member.id) }
+        verify { handleNotFound.teamNotFound(team.id) }
+        verify { handleNotFound.eventNotFound(event.id) }
+        verify { teamCreateParticipation.createParticipation(team.id, member.id, event.id) }
     }
 
     @ParameterizedTest
@@ -239,28 +243,27 @@ class TeamControllerTest {
     fun `deleteParticipant should log, call handleNotFound and teamDeleteParticipation and return OK and the TeamDTO if all found`(
         output: CapturedOutput
     ) {
-        val id = UUID.randomUUID()
         val memberId = UUID.randomUUID()
         val eventId = 1
 
-        val team = testTeam(3).copy(id = id)
+        val team = generateRandomTeam()
 
         every { handleNotFound.memberNotFound(memberId) } returns false
-        every { handleNotFound.teamNotFound(id) } returns false
+        every { handleNotFound.teamNotFound(team.id) } returns false
         every { handleNotFound.eventNotFound(eventId) } returns false
-        every { handleNotFound.participationNotFound(id, memberId, eventId) } returns false
-        every { teamDeleteParticipation.removeParticipation(id, memberId, eventId) } returns team
+        every { handleNotFound.participationNotFound(team.id, memberId, eventId) } returns false
+        every { teamDeleteParticipation.removeParticipation(team.id, memberId, eventId) } returns team
 
-        assertEquals(teamController.removeParticipant(id, memberId, eventId), ResponseEntity.ok(team.toDto()))
+        assertEquals(teamController.removeParticipant(team.id, memberId, eventId), ResponseEntity.ok(team.toDto()))
         assert(output.contains(
-            "Removing Participant:<Member:$memberId, Event:$eventId> from Team:$id"
+            "Removing Participant:<Member:$memberId, Event:$eventId> from Team:${team.id}"
         ))
 
         verify { handleNotFound.memberNotFound(memberId) }
-        verify { handleNotFound.teamNotFound(id) }
+        verify { handleNotFound.teamNotFound(team.id) }
         verify { handleNotFound.eventNotFound(eventId) }
-        verify { handleNotFound.participationNotFound(id, memberId, eventId) }
-        verify { teamDeleteParticipation.removeParticipation(id, memberId, eventId) }
+        verify { handleNotFound.participationNotFound(team.id, memberId, eventId) }
+        verify { teamDeleteParticipation.removeParticipation(team.id, memberId, eventId) }
     }
 
     @ParameterizedTest
@@ -289,17 +292,5 @@ class TeamControllerTest {
         verify(exactly = if (index <= 1) 0 else 1) { handleNotFound.eventNotFound(eventId) }
         verify(exactly = if (index <= 2) 0 else 1) { handleNotFound.participationNotFound(id, memberId, eventId) }
         verify { teamDeleteParticipation.removeParticipation(id, memberId, eventId) wasNot Called }
-    }
-
-    private fun testTeam(index: Int = 0): Team {
-        val names = listOf("Orga", "Bureau", "Développement", "Anciens membres du bureau")
-        val i: Int = if (index > 3) 0 else index
-
-        return Team(
-            UUID.randomUUID(),
-            names[i],
-            null,
-            emptySet()
-        )
     }
 }

@@ -9,4 +9,5 @@ class MemberExists (
     private val memberPort: MemberPort
 ) {
     fun exists(id: UUID): Boolean = memberPort.existsById(id)
+    fun contactExists(id: UUID, contactId: UUID): Boolean = memberPort.contactExistsById(id, contactId)
 }

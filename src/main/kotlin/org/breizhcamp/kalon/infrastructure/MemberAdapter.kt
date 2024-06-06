@@ -1,5 +1,6 @@
 package org.breizhcamp.kalon.infrastructure
 
+import jakarta.transaction.Transactional
 import org.breizhcamp.kalon.application.dto.MemberCreationReq
 import org.breizhcamp.kalon.domain.entities.Member
 import org.breizhcamp.kalon.domain.entities.MemberFilter
@@ -31,9 +32,11 @@ class MemberAdapter (
         return Optional.of(member)
     }
 
+    @Transactional
     override fun add(creationReq: MemberCreationReq): Member =
         memberRepo.createMember(creationReq.lastname, creationReq.firstname).toMember()
 
+    @Transactional
     override fun update(id: UUID, member: MemberPartial): Member {
         memberRepo.updatePartial(id, member.lastname, member.firstname, member.profilePictureLink)
         return getById(id).get()
@@ -44,7 +47,16 @@ class MemberAdapter (
         return getById(id).get()
     }
 
+    @Transactional
+    override fun removeContact(id: UUID, contactId: UUID): Member {
+        memberRepo.removeContact(contactId)
+        return getById(id).get()
+    }
+
     override fun existsById(id: UUID): Boolean =
         memberRepo.existsById(id)
+
+    override fun contactExistsById(id: UUID, contactId: UUID): Boolean =
+        memberRepo.existsContactByIds(id, contactId)
 
 }

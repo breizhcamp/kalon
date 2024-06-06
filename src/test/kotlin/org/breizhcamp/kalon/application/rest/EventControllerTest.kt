@@ -7,8 +7,14 @@ import io.mockk.verify
 import org.breizhcamp.kalon.application.dto.EventCreationReq
 import org.breizhcamp.kalon.application.dto.EventDTO
 import org.breizhcamp.kalon.application.handlers.HandleNotFound
-import org.breizhcamp.kalon.domain.entities.*
+import org.breizhcamp.kalon.domain.entities.EventFilter
+import org.breizhcamp.kalon.domain.entities.EventPartial
+import org.breizhcamp.kalon.domain.entities.EventParticipant
+import org.breizhcamp.kalon.domain.entities.Order
 import org.breizhcamp.kalon.domain.use_cases.*
+import org.breizhcamp.kalon.testUtils.generateRandomEvent
+import org.breizhcamp.kalon.testUtils.generateRandomMember
+import org.breizhcamp.kalon.testUtils.generateRandomTeam
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -22,6 +28,8 @@ import org.springframework.http.HttpStatusCode
 import org.springframework.http.ResponseEntity
 import org.springframework.test.context.junit.jupiter.SpringExtension
 import java.util.*
+import kotlin.math.absoluteValue
+import kotlin.random.Random
 
 @ExtendWith(SpringExtension::class)
 @ExtendWith(OutputCaptureExtension::class)
@@ -57,7 +65,11 @@ class EventControllerTest {
     fun `list should log, call eventList with default filter and return the IDs`(
         output: CapturedOutput,
     ) {
-        val returnedEvents = listOf(1, 2, 4).map(this::testEvent)
+        val returnedEvents = listOf(
+            generateRandomEvent(),
+            generateRandomEvent(),
+            generateRandomEvent()
+        )
         every { eventList.list(EventFilter.default()) } returns returnedEvents
 
         assertEquals(eventController.list(), returnedEvents.map { it.id })
@@ -73,9 +85,10 @@ class EventControllerTest {
         output: CapturedOutput,
     ) {
         val request = EventCreationReq(2024, null)
-        every { eventAdd.add(request) } returns testEvent(1, 2024)
+        val returnedEvent = generateRandomEvent().copy(year = request.year)
+        every { eventAdd.add(request) } returns returnedEvent
 
-        assertEquals(eventController.createEvent(request), testEvent(1, 2024).toDto())
+        assertEquals(eventController.createEvent(request), returnedEvent.toDto())
         assert(output.contains(
             "Creating Event with values name=${request.name} year=${request.year}"
         ))
@@ -103,29 +116,30 @@ class EventControllerTest {
     fun `getEventInfos should log, call handleNotFound and eventGet and return OK and the EventDTO if Event found`(
         output: CapturedOutput
     ) {
-        val id = 1
-        every { handleNotFound.eventNotFound(id) } returns false
-        every { eventGet.get(id) } returns Optional.of(testEvent(id))
+        val event = generateRandomEvent()
+        every { handleNotFound.eventNotFound(event.id) } returns false
+        every { eventGet.get(event.id) } returns Optional.of(event)
 
-        assertEquals(eventController.getEventInfos(id),  ResponseEntity.ok(testEvent(id).toDto()))
+        assertEquals(eventController.getEventInfos(event.id),  ResponseEntity.ok(event.toDto()))
         assert(output.contains(
-            "Retrieving Event:${id}"
+            "Retrieving Event:${event.id}"
         ))
 
-        verify { handleNotFound.eventNotFound(id) }
-        verify { eventGet.get(id) }
+        verify { handleNotFound.eventNotFound(event.id) }
+        verify { eventGet.get(event.id) }
     }
 
     @Test
     fun `getEventInfos should log, call handleNotFound, not call eventGet and return a NOT_FOUND response if Event not found`(
         output: CapturedOutput
     ) {
+        val id = Random.nextInt().absoluteValue
         every { handleNotFound.eventNotFound(any()) } returns true
         every { eventGet.get(any()) }
 
-        assertEquals(eventController.getEventInfos(1), ResponseEntity<EventDTO>(HttpStatusCode.valueOf(404)))
+        assertEquals(eventController.getEventInfos(id), ResponseEntity<EventDTO>(HttpStatusCode.valueOf(404)))
         assert(output.contains(
-            "Retrieving Event:${1}"
+            "Retrieving Event:${id}"
         ))
 
         verify { handleNotFound.eventNotFound(any()) }
@@ -156,13 +170,14 @@ class EventControllerTest {
     fun `updateEventInfos should log, call handleNotFound, not call eventUpdateInfos and return NOT_FOUND if Event not found`(
         output: CapturedOutput
     ) {
+        val id = Random.nextInt().absoluteValue
         val partial = EventPartial.empty()
         every { handleNotFound.eventNotFound(any()) } returns true
         every { eventUpdateInfos.updateInfos(any(), any()) }
 
-        assertEquals(eventController.updateEventInfos(1, partial.toDto()), ResponseEntity<EventDTO>(HttpStatusCode.valueOf(404)))
+        assertEquals(eventController.updateEventInfos(id, partial.toDto()), ResponseEntity<EventDTO>(HttpStatusCode.valueOf(404)))
         assert(output.contains(
-            "Updating infos of Event:${1}"
+            "Updating infos of Event:${id}"
         ))
 
         verify { handleNotFound.eventNotFound(any()) }
@@ -173,30 +188,26 @@ class EventControllerTest {
     fun `addParticipant should log, call handleNotFound and eventAddParticipant and return OK and the EventDTO if all found`(
         output: CapturedOutput
     ) {
-        val id = 4
-        val teamId = UUID.randomUUID()
-        val memberId = UUID.randomUUID()
+        val team = generateRandomTeam()
+        val member = generateRandomMember()
 
-        val team = Team(teamId, "Orga", null, emptySet())
-        val member = Member(memberId, "LUCAS", "Claire", emptySet(), null, emptySet())
+        val event = generateRandomEvent().copy(eventParticipants = setOf(EventParticipant(member, team)))
 
-        val event = testEvent(id).copy(eventParticipants = setOf(EventParticipant(member, team)))
+        every { handleNotFound.memberNotFound(member.id) } returns false
+        every { handleNotFound.teamNotFound(team.id) } returns false
+        every { handleNotFound.eventNotFound(event.id) } returns false
+        every { eventAddParticipant.addParticipant(event.id, member.id, team.id) } returns event
 
-        every { handleNotFound.memberNotFound(memberId) } returns false
-        every { handleNotFound.teamNotFound(teamId) } returns false
-        every { handleNotFound.eventNotFound(id) } returns false
-        every { eventAddParticipant.addParticipant(id, memberId, teamId) } returns event
-
-        val response = eventController.addParticipant(id, memberId, teamId)
+        val response = eventController.addParticipant(event.id, member.id, team.id)
         assert(output.contains(
-            "Adding Participant:<Member:${memberId}, Team:${teamId}> to Event:${id}"
+            "Adding Participant:<Member:${member.id}, Team:${team.id}> to Event:${event.id}"
         ))
         assertEquals(response, ResponseEntity.ok(event.toDto()))
 
-        verify { handleNotFound.memberNotFound(memberId) }
-        verify { handleNotFound.teamNotFound(teamId) }
-        verify { handleNotFound.eventNotFound(id) }
-        verify { eventAddParticipant.addParticipant(id, memberId, teamId) }
+        verify { handleNotFound.memberNotFound(member.id) }
+        verify { handleNotFound.teamNotFound(team.id) }
+        verify { handleNotFound.eventNotFound(event.id) }
+        verify { eventAddParticipant.addParticipant(event.id, member.id, team.id) }
     }
 
     @ParameterizedTest
@@ -234,7 +245,7 @@ class EventControllerTest {
     fun `removeParticipant should log, call handleNotFound and eventRemoveParticipant and return OK with EventDTO if all found`(
         output: CapturedOutput
     ) {
-        val id = 6
+        val id = Random.nextInt().absoluteValue
         val teamId = UUID.randomUUID()
         val memberId = UUID.randomUUID()
 
@@ -264,7 +275,7 @@ class EventControllerTest {
         index: Int,
         output: CapturedOutput
     ) {
-        val id = 7
+        val id = Random.nextInt().absoluteValue
         val teamId = UUID.randomUUID()
         val memberId = UUID.randomUUID()
 
@@ -286,17 +297,5 @@ class EventControllerTest {
         verify { eventRemoveParticipant.removeParticipant(id, memberId, teamId) wasNot Called }
     }
 
-    private fun testEvent(id: Int, year: Int = 2020 + id) = Event(
-        id = id,
-        name = null,
-        year = year,
-        debutEvent = null,
-        finEvent = null,
-        debutCFP = null,
-        finCFP = null,
-        debutInscription = null,
-        finInscription = null,
-        eventParticipants = emptySet(),
-        website = null
-    )
+    private fun testEvent(id: Int, year: Int = 2020 + id) = generateRandomEvent().copy(id = id, year = year)
 }

@@ -13,6 +13,8 @@ interface MemberPort {
     fun add(creationReq: MemberCreationReq): Member
     fun update(id: UUID, member: MemberPartial): Member
     fun addContact(id: UUID, platform: String, link: String): Member
+    fun removeContact(id: UUID, contactId: UUID): Member
     fun existsById(id: UUID): Boolean
+    fun contactExistsById(id: UUID, contactId: UUID): Boolean
 
 }

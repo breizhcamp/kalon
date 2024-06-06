@@ -5,9 +5,12 @@ import io.mockk.Runs
 import io.mockk.every
 import io.mockk.just
 import io.mockk.verify
-import org.breizhcamp.kalon.domain.entities.Event
+import org.breizhcamp.kalon.domain.entities.EventParticipant
 import org.breizhcamp.kalon.domain.use_cases.ports.EventPort
 import org.breizhcamp.kalon.domain.use_cases.ports.ParticipationPort
+import org.breizhcamp.kalon.testUtils.generateRandomEvent
+import org.breizhcamp.kalon.testUtils.generateRandomMember
+import org.breizhcamp.kalon.testUtils.generateRandomTeam
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -29,31 +32,21 @@ class EventAddParticipantTest {
     @Autowired
     private lateinit var eventAddParticipant: EventAddParticipant
 
-    private val memberId = UUID.randomUUID()
-    private val teamId = UUID.randomUUID()
-
-    private val testEvent = Event(
-        id = 1,
-        name = "Breizh camp 2024",
-        year = 2024,
-        debutEvent = null,
-        finEvent = null,
-        debutCFP = null,
-        finCFP = null,
-        debutInscription = null,
-        finInscription = null,
-        eventParticipants = emptySet(),
-        website = null,
-    )
-
     @Test
     fun `should call port to add participant`() {
-        every { participationPort.createByIds(teamId, memberId, 1) } just Runs
-        every { eventPort.getById(1) } returns Optional.of(testEvent)
+        val eventBefore = generateRandomEvent()
 
-        Assertions.assertEquals(eventAddParticipant.addParticipant(1, memberId, teamId), testEvent)
+        val team = generateRandomTeam()
+        val member = generateRandomMember()
 
-        verify { participationPort.createByIds(teamId, memberId, 1) }
-        verify { eventPort.getById(1) }
+        val eventAfter = eventBefore.copy(eventParticipants = setOf(EventParticipant(member, team)))
+
+        every { participationPort.createByIds(team.id, member.id, eventBefore.id) } just Runs
+        every { eventPort.getById(eventAfter.id) } returns Optional.of(eventAfter)
+
+        Assertions.assertEquals(eventAddParticipant.addParticipant(eventBefore.id, member.id, team.id), eventAfter)
+
+        verify { participationPort.createByIds(team.id, member.id, eventBefore.id) }
+        verify { eventPort.getById(eventAfter.id) }
     }
 }

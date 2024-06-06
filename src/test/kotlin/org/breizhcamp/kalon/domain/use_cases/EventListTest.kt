@@ -3,9 +3,9 @@ package org.breizhcamp.kalon.domain.use_cases
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.every
 import io.mockk.verify
-import org.breizhcamp.kalon.domain.entities.Event
 import org.breizhcamp.kalon.domain.entities.EventFilter
 import org.breizhcamp.kalon.domain.use_cases.ports.EventPort
+import org.breizhcamp.kalon.testUtils.generateRandomEvent
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.beans.factory.annotation.Autowired
@@ -22,25 +22,12 @@ class EventListTest {
     @Autowired
     private lateinit var eventList: EventList
 
-    private val testEvent = Event(
-        id = 1,
-        name = "Breizh camp 2024",
-        year = 2024,
-        debutEvent = null,
-        finEvent = null,
-        debutCFP = null,
-        finCFP = null,
-        debutInscription = null,
-        finInscription = null,
-        eventParticipants = emptySet(),
-        website = null,
-    )
-
     @Test
     fun `should call port to list events`() {
-        every { eventPort.list(EventFilter.default()) } returns listOf(testEvent)
+        val event = generateRandomEvent()
+        every { eventPort.list(EventFilter.default()) } returns listOf(event)
 
-        assert(eventList.list(EventFilter.default()).contains(testEvent))
+        assert(eventList.list(EventFilter.default()).contains(event))
 
         verify { eventPort.list(EventFilter.default()) }
     }

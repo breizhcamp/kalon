@@ -9,9 +9,8 @@ import org.breizhcamp.kalon.domain.entities.Team
 import org.breizhcamp.kalon.domain.entities.TeamFilter
 import org.breizhcamp.kalon.domain.entities.TeamPartial
 import org.breizhcamp.kalon.infrastructure.db.mappers.toTeam
-import org.breizhcamp.kalon.infrastructure.db.model.TeamDB
 import org.breizhcamp.kalon.infrastructure.db.repos.TeamRepo
-import org.breizhcamp.kalon.testUtils.generateRandomHexString
+import org.breizhcamp.kalon.testUtils.generateRandomTeamDB
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -35,7 +34,11 @@ class TeamAdapterTest {
     @Test
     fun `list should call repo with provided filter and return a list of Teams`() {
         val filter = TeamFilter.empty()
-        val returned = listOf(0, 1, 2).map(this::testTeamDB)
+        val returned = listOf(
+            generateRandomTeamDB(),
+            generateRandomTeamDB(),
+            generateRandomTeamDB()
+        )
 
         every { teamRepo.filter(filter) } returns returned
 
@@ -49,75 +52,62 @@ class TeamAdapterTest {
     fun `getById should always call repo!findById, call repo!getParticipations when result not empty, and return Optional of Team`(
         exists: Boolean
     ) {
-        val id = UUID.randomUUID()
-        val option = if (exists) Optional.of(testTeamDB().copy(id = id)) else Optional.empty()
+        val team = generateRandomTeamDB()
+        val option = if (exists) Optional.of(team) else Optional.empty()
 
-        every { teamRepo.findById(id) } returns option
-        every { teamRepo.getParticipations(id) } returns emptySet()
+        every { teamRepo.findById(team.id) } returns option
+        every { teamRepo.getParticipations(team.id) } returns emptySet()
 
-        val result = teamAdapter.getById(id)
+        val result = teamAdapter.getById(team.id)
 
-        verify { teamRepo.findById(id) }
+        verify { teamRepo.findById(team.id) }
 
         if(exists) {
-            assertEquals(result, Optional.of(testTeamDB().copy(id = id).toTeam()))
+            assertEquals(result, Optional.of(team.toTeam()))
 
-            verify { teamRepo.getParticipations(id) }
+            verify { teamRepo.getParticipations(team.id) }
         } else {
             val emptyOptional: Optional<Team> = Optional.empty()
             assertEquals(result, emptyOptional)
 
-            verify { teamRepo.getParticipations(id) wasNot Called }
+            verify { teamRepo.getParticipations(team.id) wasNot Called }
         }
     }
 
     @Test
     fun `add should call repo with name in request and return the Team`() {
-        val name = generateRandomHexString(2)
+        val teamDB = generateRandomTeamDB()
+        val request = TeamCreationReq(teamDB.name)
 
-        val request = TeamCreationReq(name)
-        val teamDB = testTeamDB().copy(name = name)
-
-        every { teamRepo.savePartial(name) } returns teamDB
+        every { teamRepo.savePartial(request.name) } returns teamDB
 
         assertEquals(teamAdapter.add(request), teamDB.toTeam())
 
-        verify { teamRepo.savePartial(name) }
+        verify { teamRepo.savePartial(request.name) }
     }
 
     @Test
     fun `update should transmit id and exploded TeamPartial to repo and return the Team`() {
-        val id = UUID.randomUUID()
-        val name = generateRandomHexString()
-        val description = generateRandomHexString(4)
-
-        val partial = TeamPartial(
-            name = name,
-            description = description
-        )
-        val teamDB = TeamDB(
-            id = id,
-            name = name,
-            description = description
-        )
+        val teamDB = generateRandomTeamDB()
+        val partial = TeamPartial(name = teamDB.name, description = teamDB.description)
 
         every { teamRepo.updatePartial(
-            id = id,
-            name = name,
-            description = description
+            id = teamDB.id,
+            name = partial.name,
+            description = partial.description
         ) } returns Unit
-        every { teamRepo.findById(id) } returns Optional.of(teamDB)
-        every { teamRepo.getParticipations(id) } returns emptySet()
+        every { teamRepo.findById(teamDB.id) } returns Optional.of(teamDB)
+        every { teamRepo.getParticipations(teamDB.id) } returns emptySet()
 
-        assertEquals(teamAdapter.update(id, partial), teamDB.toTeam())
+        assertEquals(teamAdapter.update(teamDB.id, partial), teamDB.toTeam())
 
         verify { teamRepo.updatePartial(
-            id = id,
-            name = name,
-            description = description
+            id = teamDB.id,
+            name = partial.name,
+            description = partial.description
         ) }
-        verify { teamRepo.findById(id) }
-        verify { teamRepo.getParticipations(id) }
+        verify { teamRepo.findById(teamDB.id) }
+        verify { teamRepo.getParticipations(teamDB.id) }
     }
 
     @ParameterizedTest
@@ -131,18 +121,6 @@ class TeamAdapterTest {
         assertEquals(teamAdapter.existsById(id), exists)
 
         verify { teamRepo.existsById(id) }
-    }
-
-    private fun testTeamDB(index: Int = 0): TeamDB {
-        val names = listOf("Orga", "Bureau", "Comm")
-
-        val i = if (index > 2) 0 else index
-
-        return TeamDB(
-            id = UUID.randomUUID(),
-            name = names[i],
-            description = null
-        )
     }
 
 }

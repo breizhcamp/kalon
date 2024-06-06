@@ -8,8 +8,8 @@ import java.util.*
 
 @Service
 @Transactional
-class MemberAddContact(
+class MemberCreateContact(
     private val memberPort: MemberPort
 ) {
-    fun addContact(id: UUID, platform: String, link: String): Member = memberPort.addContact(id, platform, link)
+    fun create(id: UUID, platform: String, link: String): Member = memberPort.addContact(id, platform, link)
 }

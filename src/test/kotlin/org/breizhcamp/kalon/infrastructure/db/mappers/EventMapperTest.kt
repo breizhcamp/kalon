@@ -1,30 +1,15 @@
 package org.breizhcamp.kalon.infrastructure.db.mappers
 
 import org.breizhcamp.kalon.domain.entities.EventParticipant
-import org.breizhcamp.kalon.infrastructure.db.model.EventDB
-import org.breizhcamp.kalon.testUtils.generateRandomHexString
-import org.breizhcamp.kalon.testUtils.generateRandomLocalDate
+import org.breizhcamp.kalon.testUtils.generateRandomEventDB
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import kotlin.random.Random
 
 class EventMapperTest {
 
     @Test
     fun `toEvent should transmit all values and create an empty set for participants`() {
-        val year = Random.nextInt(2010, 2030)
-        val eventDB = EventDB(
-            id = Random.nextInt(1, 10),
-            year = year,
-            name = generateRandomHexString(),
-            debutEvent = generateRandomLocalDate(year),
-            finEvent = generateRandomLocalDate(year),
-            debutCFP = generateRandomLocalDate(year),
-            finCFP = generateRandomLocalDate(year),
-            debutInscription = generateRandomLocalDate(year),
-            finInscription = generateRandomLocalDate(year),
-            website = generateRandomHexString(4)
-        )
+        val eventDB = generateRandomEventDB()
 
         val event = eventDB.toEvent()
         val emptyParticipantSet: Set<EventParticipant> = emptySet()

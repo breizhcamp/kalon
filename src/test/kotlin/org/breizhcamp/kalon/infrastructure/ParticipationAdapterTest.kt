@@ -30,7 +30,7 @@ class ParticipationAdapterTest {
 
     @ParameterizedTest
     @ValueSource(booleans = [true, false])
-    fun existsByIds(exists: Boolean) {
+    fun `existsByIds should call repo with composite key`(exists: Boolean) {
         val teamId = UUID.randomUUID()
         val memberId = UUID.randomUUID()
         val eventId = Random.nextInt().absoluteValue
@@ -43,7 +43,7 @@ class ParticipationAdapterTest {
     }
 
     @Test
-    fun `createByIds should call repo with composite ids in a ParticipationDB`() {
+    fun `createByIds should call repo with composite key`() {
         val teamId = UUID.randomUUID()
         val memberId = UUID.randomUUID()
         val eventId = Random.nextInt().absoluteValue
@@ -60,7 +60,7 @@ class ParticipationAdapterTest {
     }
 
     @Test
-    fun `removeByIds should call repo with composited key`() {
+    fun `removeByIds should call repo with composite key`() {
         val teamId = UUID.randomUUID()
         val memberId = UUID.randomUUID()
         val eventId = Random.nextInt().absoluteValue

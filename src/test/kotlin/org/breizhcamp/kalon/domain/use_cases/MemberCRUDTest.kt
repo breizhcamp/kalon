@@ -29,7 +29,7 @@ class MemberCRUDTest {
     private lateinit var memberCRUD: MemberCRUD
 
     @Test
-    fun add() {
+    fun `add should call port with the request and return the Member`() {
         val member = generateRandomMember()
         val request = MemberCreationReq(lastname = member.lastname, firstname = member.firstname)
 
@@ -41,7 +41,7 @@ class MemberCRUDTest {
     }
 
     @Test
-    fun list() {
+    fun `list should call port with the filter and return the List of Member`() {
         val returned = listOf(
             generateRandomMember(),
             generateRandomMember(),
@@ -58,7 +58,7 @@ class MemberCRUDTest {
 
     @ParameterizedTest
     @ValueSource(booleans = [false, true])
-    fun getById(exists: Boolean) {
+    fun `getById should call port with the id and return the Optional of Member`(exists: Boolean) {
         val member = generateRandomMember()
 
         every { memberPort.getById(member.id) } returns
@@ -75,7 +75,7 @@ class MemberCRUDTest {
     }
 
     @Test
-    fun update() {
+    fun `update should call port with Member Id and Partial, and return the updated Member`() {
         val member = generateRandomMember()
         val partial = MemberPartial(lastname = member.lastname, firstname = member.lastname, profilePictureLink = member.profilePictureLink)
         every { memberPort.update(member.id, partial) } returns member

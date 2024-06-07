@@ -24,7 +24,7 @@ class MemberDeleteContactTest {
     private lateinit var memberDeleteContact: MemberDeleteContact
 
     @Test
-    fun delete() {
+    fun `delete should call port and return the Member`() {
         val member = generateRandomMember()
         val contactId = UUID.randomUUID()
 

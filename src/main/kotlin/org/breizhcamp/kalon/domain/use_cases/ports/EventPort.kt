@@ -12,6 +12,7 @@ interface EventPort {
     fun add(creationReq: EventCreationReq): Event
     fun exists(id: Int): Boolean
     fun getById(id: Int): Optional<Event>
-    fun updateInfos(id: Int, partial: EventPartial): Event
+    fun update(id: Int, partial: EventPartial): Event
+    fun delete(id: Int)
 
 }

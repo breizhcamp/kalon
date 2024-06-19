@@ -11,7 +11,9 @@ import org.breizhcamp.kalon.domain.entities.EventFilter
 import org.breizhcamp.kalon.domain.entities.EventPartial
 import org.breizhcamp.kalon.domain.entities.EventParticipant
 import org.breizhcamp.kalon.domain.entities.Order
-import org.breizhcamp.kalon.domain.use_cases.*
+import org.breizhcamp.kalon.domain.use_cases.EventAddParticipant
+import org.breizhcamp.kalon.domain.use_cases.EventCrud
+import org.breizhcamp.kalon.domain.use_cases.EventRemoveParticipant
 import org.breizhcamp.kalon.testUtils.generateRandomEvent
 import org.breizhcamp.kalon.testUtils.generateRandomMember
 import org.breizhcamp.kalon.testUtils.generateRandomTeam
@@ -37,22 +39,13 @@ import kotlin.random.Random
 class EventControllerTest {
 
     @MockkBean
-    private lateinit var eventList: EventList
-
-    @MockkBean
-    private lateinit var eventAdd: EventAdd
-
-    @MockkBean
-    private lateinit var eventGet: EventGet
+    private lateinit var eventCrud: EventCrud
 
     @MockkBean
     private lateinit var eventAddParticipant: EventAddParticipant
 
     @MockkBean
     private lateinit var eventRemoveParticipant: EventRemoveParticipant
-
-    @MockkBean
-    private lateinit var eventUpdateInfos: EventUpdateInfos
 
     @MockkBean
     private lateinit var handleNotFound: HandleNotFound
@@ -70,14 +63,14 @@ class EventControllerTest {
             generateRandomEvent(),
             generateRandomEvent()
         )
-        every { eventList.list(EventFilter.default()) } returns returnedEvents
+        every { eventCrud.list(EventFilter.default()) } returns returnedEvents
 
         assertEquals(eventController.list(), returnedEvents.map { it.id })
         assert(output.contains(
             "Listing all Events by their IDs"
         ))
 
-        verify { eventList.list(EventFilter.default()) }
+        verify { eventCrud.list(EventFilter.default()) }
     }
 
     @Test
@@ -86,14 +79,14 @@ class EventControllerTest {
     ) {
         val request = EventCreationReq(2024, null)
         val returnedEvent = generateRandomEvent().copy(year = request.year)
-        every { eventAdd.add(request) } returns returnedEvent
+        every { eventCrud.create(request) } returns returnedEvent
 
         assertEquals(eventController.createEvent(request), returnedEvent.toDto())
         assert(output.contains(
             "Creating Event with values name=${request.name} year=${request.year}"
         ))
 
-        verify { eventAdd.add(request) }
+        verify { eventCrud.create(request) }
     }
 
     @Test
@@ -102,14 +95,14 @@ class EventControllerTest {
     ) {
         val filter = EventFilter.default().copy(yearBefore = 2023, yearOrder = Order.ASC)
         val returnedEvents = listOf(1, 2).map(this::testEvent)
-        every { eventList.list(filter) } returns returnedEvents
+        every { eventCrud.list(filter) } returns returnedEvents
 
         assertEquals(eventController.filterEvents(filter), returnedEvents.sortedBy { it.year }.map { it.toDto() })
         assert(output.contains(
             "Filtering ${filter.limit?:"all"} Events with ${filter.yearOrder} year order"
         ))
 
-        verify { eventList.list(filter)}
+        verify { eventCrud.list(filter)}
     }
 
     @Test
@@ -118,7 +111,7 @@ class EventControllerTest {
     ) {
         val event = generateRandomEvent()
         every { handleNotFound.eventNotFound(event.id) } returns false
-        every { eventGet.get(event.id) } returns Optional.of(event)
+        every { eventCrud.get(event.id) } returns Optional.of(event)
 
         assertEquals(eventController.getEventInfos(event.id),  ResponseEntity.ok(event.toDto()))
         assert(output.contains(
@@ -126,7 +119,7 @@ class EventControllerTest {
         ))
 
         verify { handleNotFound.eventNotFound(event.id) }
-        verify { eventGet.get(event.id) }
+        verify { eventCrud.get(event.id) }
     }
 
     @Test
@@ -135,7 +128,7 @@ class EventControllerTest {
     ) {
         val id = Random.nextInt().absoluteValue
         every { handleNotFound.eventNotFound(any()) } returns true
-        every { eventGet.get(any()) }
+        every { eventCrud.get(any()) }
 
         assertEquals(eventController.getEventInfos(id), ResponseEntity<EventDTO>(HttpStatusCode.valueOf(404)))
         assert(output.contains(
@@ -143,7 +136,7 @@ class EventControllerTest {
         ))
 
         verify { handleNotFound.eventNotFound(any()) }
-        verify { eventGet.get(any()) wasNot Called }
+        verify { eventCrud.get(any()) wasNot Called }
     }
 
     @Test
@@ -155,7 +148,7 @@ class EventControllerTest {
         val partial = EventPartial.empty().copy(name = name)
         val eventAfter = testEvent(id).copy(name = name)
         every { handleNotFound.eventNotFound(id) } returns false
-        every { eventUpdateInfos.updateInfos(id, partial) } returns eventAfter
+        every { eventCrud.update(id, partial) } returns eventAfter
 
         assertEquals(eventController.updateEventInfos(id, partial.toDto()), ResponseEntity.ok(eventAfter.toDto()))
         assert(output.contains(
@@ -163,7 +156,7 @@ class EventControllerTest {
         ))
 
         verify { handleNotFound.eventNotFound(id) }
-        verify { eventUpdateInfos.updateInfos(id, partial) }
+        verify { eventCrud.update(id, partial) }
     }
 
     @Test
@@ -173,7 +166,7 @@ class EventControllerTest {
         val id = Random.nextInt().absoluteValue
         val partial = EventPartial.empty()
         every { handleNotFound.eventNotFound(any()) } returns true
-        every { eventUpdateInfos.updateInfos(any(), any()) }
+        every { eventCrud.update(any(), any()) }
 
         assertEquals(eventController.updateEventInfos(id, partial.toDto()), ResponseEntity<EventDTO>(HttpStatusCode.valueOf(404)))
         assert(output.contains(
@@ -181,7 +174,7 @@ class EventControllerTest {
         ))
 
         verify { handleNotFound.eventNotFound(any()) }
-        verify { eventUpdateInfos.updateInfos(any(), any()) wasNot Called }
+        verify { eventCrud.update(any(), any()) wasNot Called }
     }
 
     @Test

@@ -7,7 +7,9 @@ import org.breizhcamp.kalon.application.dto.EventPartialDTO
 import org.breizhcamp.kalon.application.dto.EventParticipantDTO
 import org.breizhcamp.kalon.application.handlers.HandleNotFound
 import org.breizhcamp.kalon.domain.entities.*
-import org.breizhcamp.kalon.domain.use_cases.*
+import org.breizhcamp.kalon.domain.use_cases.EventAddParticipant
+import org.breizhcamp.kalon.domain.use_cases.EventCrud
+import org.breizhcamp.kalon.domain.use_cases.EventRemoveParticipant
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 import java.util.*
@@ -17,12 +19,9 @@ private val logger = KotlinLogging.logger {}
 @RestController
 @RequestMapping("/api/events")
 class EventController (
-    private val eventList: EventList,
-    private val eventAdd: EventAdd,
-    private val eventGet: EventGet,
+    private val eventCrud: EventCrud,
     private val eventAddParticipant: EventAddParticipant,
     private val eventRemoveParticipant: EventRemoveParticipant,
-    private val eventUpdateInfos: EventUpdateInfos,
     private val handleNotFound: HandleNotFound,
 ) {
 
@@ -30,21 +29,28 @@ class EventController (
     fun list(): List<Int> {
         logger.info { "Listing all Events by their IDs" }
 
-        return eventList.list(EventFilter.default()).map { it.id }
+        return eventCrud.list(EventFilter.default()).map { it.id }
     }
 
     @PostMapping
     fun createEvent(@RequestBody event: EventCreationReq): EventDTO {
         logger.info { "Creating Event with values name=${event.name} year=${event.year}" }
 
-        return eventAdd.add(event).toDto()
+        return eventCrud.create(event).toDto()
+    }
+
+    @DeleteMapping("/{id}")
+    fun deleteEvent(@PathVariable id: Int) {
+        logger.info { "Deleting Event:$id" }
+
+        eventCrud.delete(id)
     }
 
     @PostMapping("/filter")
     fun filterEvents(@RequestBody filter: EventFilter): List<EventDTO> {
         logger.info { "Filtering ${filter.limit?:"all"} Events with ${filter.yearOrder?:Order.DESC} year order" }
 
-        return eventList.list(filter).map { it.toDto() }
+        return eventCrud.list(filter).map { it.toDto() }
     }
 
     @GetMapping("/{id}")
@@ -54,7 +60,7 @@ class EventController (
         if (handleNotFound.eventNotFound(id))
             return ResponseEntity.notFound().build()
 
-        return ResponseEntity.ok(eventGet.get(id).get().toDto())
+        return ResponseEntity.ok(eventCrud.get(id).get().toDto())
     }
 
     @PostMapping("/{id}")
@@ -64,7 +70,7 @@ class EventController (
         if (handleNotFound.eventNotFound(id))
             return ResponseEntity.notFound().build()
 
-        return ResponseEntity.ok(eventUpdateInfos.updateInfos(id, partialDTO.toObject()).toDto())
+        return ResponseEntity.ok(eventCrud.update(id, partialDTO.toObject()).toDto())
     }
 
     @PostMapping("/{id}/participants/{memberId}/{teamId}")

@@ -1,7 +1,7 @@
 package org.breizhcamp.kalon.application.handlers
 
 import mu.KotlinLogging
-import org.breizhcamp.kalon.domain.use_cases.EventExists
+import org.breizhcamp.kalon.domain.use_cases.EventCrud
 import org.breizhcamp.kalon.domain.use_cases.MemberExists
 import org.breizhcamp.kalon.domain.use_cases.ParticipationExists
 import org.breizhcamp.kalon.domain.use_cases.TeamExists
@@ -14,7 +14,7 @@ private val logger = KotlinLogging.logger {  }
 class HandleNotFound(
     private val teamExists: TeamExists,
     private val memberExists: MemberExists,
-    private val eventExists: EventExists,
+    private val eventCrud: EventCrud,
     private val participationExists: ParticipationExists,
 ) {
 
@@ -41,7 +41,7 @@ class HandleNotFound(
     }
 
     fun eventNotFound(id: Int): Boolean {
-        val notFound = !eventExists.exists(id)
+        val notFound = !eventCrud.exists(id)
         log(notFound, "Event:$id")
         return notFound
     }

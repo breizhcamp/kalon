@@ -1,9 +1,7 @@
 package org.breizhcamp.kalon.infrastructure
 
 import com.ninjasquad.springmockk.MockkBean
-import io.mockk.Called
-import io.mockk.every
-import io.mockk.verify
+import io.mockk.*
 import org.breizhcamp.kalon.application.dto.EventCreationReq
 import org.breizhcamp.kalon.domain.entities.Event
 import org.breizhcamp.kalon.domain.entities.EventFilter
@@ -102,7 +100,7 @@ class EventAdapterTest {
     }
 
     @Test
-    fun `updateInfos should transmit id and exploded EventPartial to repo and return the Event`() {
+    fun `update should transmit id and exploded EventPartial to repo and return the Event`() {
         val name = generateRandomHexString()
         val website = generateRandomHexString(3)
 
@@ -124,7 +122,7 @@ class EventAdapterTest {
         every { eventRepo.findById(eventDB.id) } returns Optional.of(eventDB)
         every { eventRepo.getParticipants(eventDB.id) } returns emptySet()
 
-        assertEquals(eventAdapter.updateInfos(eventDB.id, partial), eventDB.toEvent())
+        assertEquals(eventAdapter.update(eventDB.id, partial), eventDB.toEvent())
 
         verify { eventRepo.updateInfos(
             id = eventDB.id,
@@ -140,6 +138,16 @@ class EventAdapterTest {
         ) }
         verify { eventRepo.findById(eventDB.id) }
         verify { eventRepo.getParticipants(eventDB.id) }
+    }
+
+    @Test
+    fun `delete should call repo`() {
+        val id = Random.nextInt().absoluteValue
+        every { eventRepo.deleteById(id) } just Runs
+
+        eventAdapter.delete(id)
+
+        verify { eventRepo.deleteById(id) }
     }
 
 }

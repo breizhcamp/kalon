@@ -3,7 +3,7 @@ package org.breizhcamp.kalon.application.handlers
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.every
 import io.mockk.verify
-import org.breizhcamp.kalon.domain.use_cases.EventExists
+import org.breizhcamp.kalon.domain.use_cases.EventCrud
 import org.breizhcamp.kalon.domain.use_cases.MemberExists
 import org.breizhcamp.kalon.domain.use_cases.ParticipationExists
 import org.breizhcamp.kalon.domain.use_cases.TeamExists
@@ -31,7 +31,7 @@ class HandleNotFoundTest {
     private lateinit var memberExists: MemberExists
 
     @MockkBean
-    private lateinit var eventExists: EventExists
+    private lateinit var eventCrud: EventCrud
 
     @MockkBean
     private lateinit var participationExists: ParticipationExists
@@ -122,24 +122,24 @@ class HandleNotFoundTest {
     fun `should return false and not log if event exists`(output: CapturedOutput) {
         val eventId = Random.nextInt()
 
-        every { eventExists.exists(eventId) } returns true
+        every { eventCrud.exists(eventId) } returns true
 
         assert(!handleNotFound.eventNotFound(eventId))
         assert(!output.contains(notFoundLogPattern("Event", integerRegex)))
 
-        verify { eventExists.exists(eventId) }
+        verify { eventCrud.exists(eventId) }
     }
 
     @Test
     fun `should return true and log if event does not exist`(output: CapturedOutput) {
         val eventId = Random.nextInt()
 
-        every { eventExists.exists(eventId) } returns false
+        every { eventCrud.exists(eventId) } returns false
 
         assert(handleNotFound.eventNotFound(eventId))
         assert(output.contains(notFoundLogPattern("Event", integerRegex)))
 
-        verify { eventExists.exists(eventId) }
+        verify { eventCrud.exists(eventId) }
     }
 
     @Test

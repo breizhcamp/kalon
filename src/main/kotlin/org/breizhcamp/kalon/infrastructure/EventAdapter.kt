@@ -1,5 +1,6 @@
 package org.breizhcamp.kalon.infrastructure
 
+import jakarta.transaction.Transactional
 import org.breizhcamp.kalon.application.dto.EventCreationReq
 import org.breizhcamp.kalon.domain.entities.Event
 import org.breizhcamp.kalon.domain.entities.EventFilter
@@ -37,7 +38,7 @@ class EventAdapter (
         return Optional.of(event)
     }
 
-    override fun updateInfos(id: Int, partial: EventPartial): Event {
+    override fun update(id: Int, partial: EventPartial): Event {
         eventRepo.updateInfos(
             id = id,
             name = partial.name,
@@ -53,5 +54,9 @@ class EventAdapter (
 
         return this.getById(id).get()
     }
+
+    @Transactional
+    override fun delete(id: Int) =
+        eventRepo.deleteById(id)
 
 }

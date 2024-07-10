@@ -9,4 +9,5 @@ data class Member(
     val contacts: Set<Contact>,
     val profilePictureLink: String?,
     var participations: Set<MemberParticipation>,
+    val keycloakId: UUID?
 )

@@ -1,7 +1,7 @@
 package org.breizhcamp.kalon.application.rest
 
 import mu.KotlinLogging
-import org.breizhcamp.kalon.application.dto.TeamCreationReq
+import org.breizhcamp.kalon.application.requests.TeamCreationReq
 import org.breizhcamp.kalon.application.dto.TeamDTO
 import org.breizhcamp.kalon.application.dto.TeamPartialDTO
 import org.breizhcamp.kalon.application.dto.TeamParticipationDTO

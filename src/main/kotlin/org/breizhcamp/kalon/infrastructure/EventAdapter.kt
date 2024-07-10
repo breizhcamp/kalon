@@ -1,7 +1,7 @@
 package org.breizhcamp.kalon.infrastructure
 
 import jakarta.transaction.Transactional
-import org.breizhcamp.kalon.application.dto.EventCreationReq
+import org.breizhcamp.kalon.application.requests.EventCreationReq
 import org.breizhcamp.kalon.domain.entities.Event
 import org.breizhcamp.kalon.domain.entities.EventFilter
 import org.breizhcamp.kalon.domain.entities.EventPartial

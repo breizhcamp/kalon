@@ -5,5 +5,25 @@ spring:
     password: kalon
   liquibase:
     change-log: classpath:db/changelog/db.changelog-master.xml
+  security:
+    oauth2:
+      client:
+        registration:
+          keycloak:
+            client-id: kalon-api
+            authorization-grant-type: authorization_code
+            scope: open-id
+        provider:
+          keycloak:
+            issuer-uri: http://localhost:8080/realms/DevKeyCloak
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8080/realms/DevKeyCloak
 
 server.port: 4007
+
+logging:
+  level:
+    org:
+      springframework:
+        security: debug

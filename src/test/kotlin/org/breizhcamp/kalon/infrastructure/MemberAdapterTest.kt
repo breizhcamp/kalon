@@ -4,7 +4,8 @@ import com.ninjasquad.springmockk.MockkBean
 import io.mockk.Called
 import io.mockk.every
 import io.mockk.verify
-import org.breizhcamp.kalon.application.dto.MemberCreationReq
+import org.breizhcamp.kalon.application.requests.ContactCreationReq
+import org.breizhcamp.kalon.application.requests.MemberCreationReq
 import org.breizhcamp.kalon.domain.entities.Member
 import org.breizhcamp.kalon.domain.entities.MemberFilter
 import org.breizhcamp.kalon.domain.entities.MemberPartial
@@ -58,6 +59,7 @@ class MemberAdapterTest {
 
         every { memberRepo.findById(memberDB.id) } returns option
         every { memberRepo.getParticipations(memberDB.id) } returns emptySet()
+        every { memberRepo.getPublicContacts(memberDB.id) } returns memberDB.contacts
 
         val result = memberAdapter.getById(memberDB.id)
 
@@ -67,11 +69,13 @@ class MemberAdapterTest {
             assertEquals(result, Optional.of(memberDB.toMember()))
 
             verify { memberRepo.getParticipations(memberDB.id) }
+            verify { memberRepo.getPublicContacts(memberDB.id) }
         } else {
             val emptyOptional: Optional<Member> = Optional.empty()
             assertEquals(result, emptyOptional)
 
             verify { memberRepo.getParticipations(memberDB.id) wasNot Called }
+            verify { memberRepo.getPublicContacts(memberDB.id) wasNot Called }
         }
     }
 
@@ -101,6 +105,7 @@ class MemberAdapterTest {
         ) } returns Unit
         every { memberRepo.findById(memberDB.id) } returns Optional.of(memberDB)
         every { memberRepo.getParticipations(memberDB.id) } returns emptySet()
+        every { memberRepo.getPublicContacts(memberDB.id) } returns emptySet()
 
         assertEquals(memberAdapter.update(memberDB.id, partial), memberDB.toMember())
 
@@ -112,23 +117,31 @@ class MemberAdapterTest {
         ) }
         verify { memberRepo.findById(memberDB.id) }
         verify { memberRepo.getParticipations(memberDB.id) }
+        verify { memberRepo.getPublicContacts(memberDB.id) }
     }
 
     @Test
     fun `addContact should call repo with contact values and return the updated Member`() {
         val id = UUID.randomUUID()
         val contact = generateRandomContactDB(id)
+        val req = ContactCreationReq(
+            platform = contact.platform,
+            link = contact.link,
+            public = contact.public
+        )
         val member = generateRandomMemberDB().copy(id = id, contacts = setOf(contact))
 
-        every { memberRepo.addContact(id, contact.platform, contact.link) } returns Unit
+        every { memberRepo.addContact(id, req.platform, req.link, req.public) } returns Unit
         every { memberRepo.findById(id) } returns Optional.of(member)
         every { memberRepo.getParticipations(id) } returns emptySet()
+        every { memberRepo.getPublicContacts(id) } returns setOf(contact)
 
-        assertEquals(memberAdapter.addContact(id, contact.platform, contact.link), member.toMember())
+        assertEquals(memberAdapter.addContact(id, req), member.toMember())
 
-        verify { memberRepo.addContact(id, contact.platform, contact.link) }
+        verify { memberRepo.addContact(id, req.platform, req.link, req.public) }
         verify { memberRepo.findById(id) }
         verify { memberRepo.getParticipations(id) }
+        verify { memberRepo.getPublicContacts(id) }
     }
 
     @ParameterizedTest

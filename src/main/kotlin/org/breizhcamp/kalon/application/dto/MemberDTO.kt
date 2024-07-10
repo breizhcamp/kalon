@@ -9,4 +9,5 @@ data class MemberDTO(
     val contacts: List<ContactDTO>,
     val profilePictureLink: String?,
     val participations: List<MemberParticipationDTO>,
+    val keycloakId: UUID?
 )

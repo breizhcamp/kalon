@@ -41,7 +41,8 @@ fun generateRandomMember(): Member = Member(
     firstname = generateRandomHexString(),
     contacts = emptySet(),
     profilePictureLink = null,
-    participations = emptySet()
+    participations = emptySet(),
+    keycloakId = null
 )
 
 fun generateRandomMemberDB(): MemberDB = MemberDB(
@@ -49,19 +50,22 @@ fun generateRandomMemberDB(): MemberDB = MemberDB(
     lastname = generateRandomHexString(2),
     firstname = generateRandomHexString(2),
     contacts = emptySet(),
-    profilePictureLink = generateRandomHexString()
+    profilePictureLink = generateRandomHexString(),
+    keycloakId = null
 )
 fun generateRandomContact(): Contact = Contact(
     id = UUID.randomUUID(),
     platform = generateRandomHexString(),
-    link = generateRandomHexString()
+    link = generateRandomHexString(),
+    public = Random.nextBoolean()
 )
 
 fun generateRandomContactDB(memberId: UUID = UUID.randomUUID()): ContactDB =ContactDB(
     id = UUID.randomUUID(),
     memberId = memberId,
     platform = generateRandomHexString(),
-    link = generateRandomHexString()
+    link = generateRandomHexString(),
+    public = Random.nextBoolean()
 )
 
 fun generateRandomTeam(): Team = Team(

@@ -4,7 +4,7 @@ import com.ninjasquad.springmockk.MockkBean
 import io.mockk.Called
 import io.mockk.every
 import io.mockk.verify
-import org.breizhcamp.kalon.application.dto.TeamCreationReq
+import org.breizhcamp.kalon.application.requests.TeamCreationReq
 import org.breizhcamp.kalon.application.dto.TeamDTO
 import org.breizhcamp.kalon.application.dto.TeamPartialDTO
 import org.breizhcamp.kalon.application.handlers.HandleNotFound

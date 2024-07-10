@@ -4,7 +4,7 @@ import com.ninjasquad.springmockk.MockkBean
 import io.mockk.Called
 import io.mockk.every
 import io.mockk.verify
-import org.breizhcamp.kalon.application.dto.EventCreationReq
+import org.breizhcamp.kalon.application.requests.EventCreationReq
 import org.breizhcamp.kalon.application.dto.EventDTO
 import org.breizhcamp.kalon.application.handlers.HandleNotFound
 import org.breizhcamp.kalon.domain.entities.EventFilter

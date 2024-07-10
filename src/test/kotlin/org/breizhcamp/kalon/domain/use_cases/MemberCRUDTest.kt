@@ -3,7 +3,7 @@ package org.breizhcamp.kalon.domain.use_cases
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.every
 import io.mockk.verify
-import org.breizhcamp.kalon.application.dto.MemberCreationReq
+import org.breizhcamp.kalon.application.requests.MemberCreationReq
 import org.breizhcamp.kalon.domain.entities.MemberFilter
 import org.breizhcamp.kalon.domain.entities.MemberPartial
 import org.breizhcamp.kalon.domain.use_cases.ports.MemberPort

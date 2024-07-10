@@ -13,4 +13,5 @@ data class ContactDB(
     val memberId: UUID,
     val platform: String,
     val link: String,
+    val public: Boolean
 )

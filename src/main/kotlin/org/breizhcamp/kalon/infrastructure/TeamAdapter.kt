@@ -1,6 +1,6 @@
 package org.breizhcamp.kalon.infrastructure
 
-import org.breizhcamp.kalon.application.dto.TeamCreationReq
+import org.breizhcamp.kalon.application.requests.TeamCreationReq
 import org.breizhcamp.kalon.domain.entities.Team
 import org.breizhcamp.kalon.domain.entities.TeamFilter
 import org.breizhcamp.kalon.domain.entities.TeamPartial

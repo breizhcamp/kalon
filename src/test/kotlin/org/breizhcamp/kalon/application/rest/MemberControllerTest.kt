@@ -4,9 +4,10 @@ import com.ninjasquad.springmockk.MockkBean
 import io.mockk.Called
 import io.mockk.every
 import io.mockk.verify
-import org.breizhcamp.kalon.application.dto.MemberCreationReq
 import org.breizhcamp.kalon.application.dto.MemberDTO
 import org.breizhcamp.kalon.application.handlers.HandleNotFound
+import org.breizhcamp.kalon.application.requests.ContactCreationReq
+import org.breizhcamp.kalon.application.requests.MemberCreationReq
 import org.breizhcamp.kalon.domain.entities.MemberFilter
 import org.breizhcamp.kalon.domain.entities.MemberPartial
 import org.breizhcamp.kalon.domain.entities.MemberParticipation
@@ -23,8 +24,12 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
 import org.springframework.boot.test.system.CapturedOutput
 import org.springframework.boot.test.system.OutputCaptureExtension
+import org.springframework.http.HttpStatus
 import org.springframework.http.HttpStatusCode
 import org.springframework.http.ResponseEntity
+import org.springframework.security.core.authority.SimpleGrantedAuthority
+import org.springframework.security.oauth2.jwt.Jwt
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken
 import org.springframework.test.context.junit.jupiter.SpringExtension
 import java.util.*
 import kotlin.math.absoluteValue
@@ -45,16 +50,31 @@ class MemberControllerTest {
     private lateinit var memberDeleteParticipation: MemberDeleteParticipation
 
     @MockkBean
-    private lateinit var memberCreateContact: MemberCreateContact
+    private lateinit var memberContactCRUD: MemberContactCRUD
 
     @MockkBean
-    private lateinit var memberDeleteContact: MemberDeleteContact
+    private lateinit var memberKeycloakCRUD: MemberKeycloakCRUD
 
     @MockkBean
     private lateinit var handleNotFound: HandleNotFound
 
     @Autowired
     private lateinit var memberController: MemberController
+
+    private val adminAuthenticationToken = JwtAuthenticationToken(
+        Jwt.withTokenValue("admin")
+            .header("TestHeader", "test")
+            .claim("role", "admin")
+            .build(),
+        listOf(SimpleGrantedAuthority("admin")))
+
+    private val nonAdminAuthenticationToken = JwtAuthenticationToken(
+        Jwt.withTokenValue("not_admin")
+            .header("TestHeader", "test")
+            .claim("role", "kalon")
+            .build(),
+        emptyList()
+    )
 
     @Test
     fun `listAll should log, call memberList with empty filter and return a list of UUIDs`(
@@ -197,24 +217,48 @@ class MemberControllerTest {
         verify { handleNotFound.memberNotFound(id) }
         verify { memberCRUD.update(id, partial) wasNot Called }
     }
-
     @Test
     fun `addContact should log, call handleNotFound and memberAddContact and return OK and the MemberDTO if Member found`(
         output: CapturedOutput
     ) {
         val contact = generateRandomContact()
         val member = generateRandomMember().copy(contacts = setOf(contact))
+        val req = ContactCreationReq(platform = contact.platform, link = contact.link, public = contact.public)
 
         every { handleNotFound.memberNotFound(member.id) } returns false
-        every { memberCreateContact.create(member.id, contact.platform, contact.link) } returns member
+        every { memberContactCRUD.create(member.id, req) } returns member
+        every { memberKeycloakCRUD.getKeycloakId(member.id) } returns null
 
-        assertEquals(memberController.addContact(member.id, contact.platform, contact.link), ResponseEntity.ok(member.toDto()))
+        assertEquals(memberController.addContact(member.id, req, adminAuthenticationToken), ResponseEntity.ok(member.toDto()))
         assert(output.contains(
-            "Adding Contact with values platform=${contact.platform} link=${contact.link} to Member:${member.id}"
+            "Adding Contact with values $req to Member:${member.id}"
         ))
 
         verify { handleNotFound.memberNotFound(member.id) }
-        verify { memberCreateContact.create(member.id, contact.platform, contact.link) }
+        verify { memberContactCRUD.create(member.id, req) }
+        verify { memberKeycloakCRUD.getKeycloakId(member.id) }
+    }
+
+    @Test
+    fun `addContact should log, call handleNotFound and memberKeycloakCRUD and return FORBIDDEN if the user is not admin nor has the same keycloakId`(
+        output: CapturedOutput
+    ) {
+        val contact = generateRandomContact()
+        val member = generateRandomMember().copy(contacts = setOf(contact))
+        val req = ContactCreationReq(platform = contact.platform, link = contact.link, public = contact.public)
+
+        every { handleNotFound.memberNotFound(member.id) } returns false
+        every { memberContactCRUD.create(member.id, req) } returns member
+        every { memberKeycloakCRUD.getKeycloakId(member.id) } returns null
+
+        assertEquals(memberController.addContact(member.id, req, nonAdminAuthenticationToken), ResponseEntity<MemberDTO>(HttpStatus.FORBIDDEN))
+        assert(output.contains(
+            "Adding Contact with values $req to Member:${member.id}"
+        ))
+
+        verify { handleNotFound.memberNotFound(member.id) }
+        verify { memberContactCRUD.create(member.id, req) wasNot Called }
+        verify { memberKeycloakCRUD.getKeycloakId(member.id) }
     }
 
     @Test
@@ -223,20 +267,21 @@ class MemberControllerTest {
     ) {
         val contact = generateRandomContact()
         val id = UUID.randomUUID()
+        val req = ContactCreationReq(platform = contact.platform, link = contact.link, public = contact.public)
 
         every { handleNotFound.memberNotFound(id) } returns true
-        every { memberCreateContact.create(any(), any(), any()) }
+        every { memberContactCRUD.create(any(), any()) }
 
         assertEquals(
-            memberController.addContact(id, contact.platform, contact.link),
+            memberController.addContact(id, req, adminAuthenticationToken),
             ResponseEntity<MemberDTO>(HttpStatusCode.valueOf(404))
         )
         assert(output.contains(
-            "Adding Contact with values platform=${contact.platform} link=${contact.link} to Member:${id}"
+            "Adding Contact with values $req to Member:${id}"
         ))
 
         verify { handleNotFound.memberNotFound(id) }
-        verify { memberCreateContact.create(id, contact.platform, contact.link) wasNot Called}
+        verify { memberContactCRUD.create(id, req) wasNot Called}
     }
 
     @Test
@@ -248,15 +293,39 @@ class MemberControllerTest {
 
         every { handleNotFound.memberNotFound(member.id) } returns false
         every { handleNotFound.contactNotFound(member.id, contact.id) } returns false
-        every { memberDeleteContact.delete(member.id, contact.id) } returns member
+        every { memberContactCRUD.delete(member.id, contact.id) } returns member
+        every { memberKeycloakCRUD.getKeycloakId(member.id) } returns null
 
-        val response = memberController.deleteContact(member.id, contact.id)
+        val response = memberController.deleteContact(member.id, contact.id, adminAuthenticationToken)
         assert(output.contains("Removing Contact:${contact.id} from Member:${member.id}"))
         assertEquals(response, ResponseEntity.ok(member.toDto()))
 
         verify { handleNotFound.memberNotFound(member.id) }
         verify { handleNotFound.contactNotFound(member.id, contact.id) }
-        verify { memberDeleteContact.delete(member.id, contact.id) }
+        verify { memberContactCRUD.delete(member.id, contact.id) }
+        verify { memberKeycloakCRUD.getKeycloakId(member.id) }
+    }
+
+    @Test
+    fun `deleteContact should log, call handleNotFound and memberKeycloakCRUD and return FORBIDDEN if the user is not admin nor has the same keycloakId`(
+        output: CapturedOutput
+    ) {
+        val contact = generateRandomContact()
+        val member = generateRandomMember().copy(contacts = setOf(contact))
+
+        every { handleNotFound.memberNotFound(member.id) } returns false
+        every { handleNotFound.contactNotFound(member.id, contact.id) } returns false
+        every { memberContactCRUD.delete(member.id, contact.id) } returns member
+        every { memberKeycloakCRUD.getKeycloakId(member.id) } returns null
+
+        val response = memberController.deleteContact(member.id, contact.id, nonAdminAuthenticationToken)
+        assert(output.contains("Removing Contact:${contact.id} from Member:${member.id}"))
+        assertEquals(response, ResponseEntity<MemberDTO>(HttpStatus.FORBIDDEN))
+
+        verify { handleNotFound.memberNotFound(member.id) }
+        verify { handleNotFound.contactNotFound(member.id, contact.id) }
+        verify { memberContactCRUD.delete(member.id, contact.id) wasNot Called }
+        verify { memberKeycloakCRUD.getKeycloakId(member.id) }
     }
 
     @ParameterizedTest
@@ -270,15 +339,15 @@ class MemberControllerTest {
 
         every { handleNotFound.memberNotFound(member.id) } returns (index == 0)
         every { handleNotFound.contactNotFound(member.id, contact.id) } returns (index==1)
-        every { memberDeleteContact.delete(member.id, contact.id) } returns member
+        every { memberContactCRUD.delete(member.id, contact.id) } returns member
 
-        val response = memberController.deleteContact(member.id, contact.id)
+        val response = memberController.deleteContact(member.id, contact.id, adminAuthenticationToken)
         assert(output.contains("Removing Contact:${contact.id} from Member:${member.id}"))
-        assertEquals(response, ResponseEntity<MemberDTO>(HttpStatusCode.valueOf(404)))
+        assertEquals(response, ResponseEntity<MemberDTO>(HttpStatus.NOT_FOUND))
 
         verify { handleNotFound.memberNotFound(member.id) }
         verify(exactly = if (index <= 0) 0 else 1) { handleNotFound.contactNotFound(member.id, contact.id) }
-        verify { memberDeleteContact.delete(member.id, contact.id) wasNot Called }
+        verify { memberContactCRUD.delete(member.id, contact.id) wasNot Called }
     }
 
     @Test

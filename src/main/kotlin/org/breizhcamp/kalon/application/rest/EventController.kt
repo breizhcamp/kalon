@@ -1,11 +1,11 @@
 package org.breizhcamp.kalon.application.rest
 
 import mu.KotlinLogging
-import org.breizhcamp.kalon.application.dto.EventCreationReq
 import org.breizhcamp.kalon.application.dto.EventDTO
 import org.breizhcamp.kalon.application.dto.EventPartialDTO
 import org.breizhcamp.kalon.application.dto.EventParticipantDTO
 import org.breizhcamp.kalon.application.handlers.HandleNotFound
+import org.breizhcamp.kalon.application.requests.EventCreationReq
 import org.breizhcamp.kalon.domain.entities.*
 import org.breizhcamp.kalon.domain.use_cases.EventAddParticipant
 import org.breizhcamp.kalon.domain.use_cases.EventCrud

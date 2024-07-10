@@ -1,7 +1,7 @@
 package org.breizhcamp.kalon.domain.use_cases
 
 import jakarta.transaction.Transactional
-import org.breizhcamp.kalon.application.dto.MemberCreationReq
+import org.breizhcamp.kalon.application.requests.MemberCreationReq
 import org.breizhcamp.kalon.domain.entities.Member
 import org.breizhcamp.kalon.domain.entities.MemberFilter
 import org.breizhcamp.kalon.domain.entities.MemberPartial

@@ -1,12 +1,19 @@
 package org.breizhcamp.kalon.application.rest
 
-import jakarta.websocket.server.PathParam
 import mu.KotlinLogging
-import org.breizhcamp.kalon.application.dto.*
+import org.breizhcamp.kalon.application.dto.ContactDTO
+import org.breizhcamp.kalon.application.dto.MemberDTO
+import org.breizhcamp.kalon.application.dto.MemberPartialDTO
+import org.breizhcamp.kalon.application.dto.MemberParticipationDTO
 import org.breizhcamp.kalon.application.handlers.HandleNotFound
+import org.breizhcamp.kalon.application.requests.ContactCreationReq
+import org.breizhcamp.kalon.application.requests.MemberCreationReq
 import org.breizhcamp.kalon.domain.entities.*
 import org.breizhcamp.kalon.domain.use_cases.*
+import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.security.core.Authentication
+import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.web.bind.annotation.*
 import java.util.*
 
@@ -16,10 +23,10 @@ private val logger = KotlinLogging.logger {}
 @RequestMapping("/api/members")
 class MemberController (
     private val memberCRUD: MemberCRUD,
+    private val memberKeycloakCRUD: MemberKeycloakCRUD,
     private val memberCreateParticipation: MemberCreateParticipation,
     private val memberDeleteParticipation: MemberDeleteParticipation,
-    private val memberCreateContact: MemberCreateContact,
-    private val memberDeleteContact: MemberDeleteContact,
+    private val memberContactCRUD: MemberContactCRUD,
     private val handleNotFound: HandleNotFound,
 ) {
 
@@ -65,24 +72,68 @@ class MemberController (
     }
 
     @PostMapping("/{id}/contact")
-    fun addContact(@PathVariable id: UUID, @PathParam("platform") platform: String, @PathParam("link") link: String): ResponseEntity<MemberDTO> {
-        logger.info { "Adding Contact with values platform=$platform link=$link to Member:$id" }
+    fun addContact(@PathVariable id: UUID, @RequestBody req: ContactCreationReq, authentication: Authentication): ResponseEntity<MemberDTO> {
+        logger.info { "Adding Contact with values $req to Member:$id" }
 
         if (handleNotFound.memberNotFound(id))
             return ResponseEntity.notFound().build()
 
-        return ResponseEntity.ok(memberCreateContact.create(id, platform, link).toDto())
+        val keycloakMemberId = memberKeycloakCRUD.getKeycloakId(id)
+
+        return if (
+            authentication.authorities.contains(SimpleGrantedAuthority("admin")) ||
+            (keycloakMemberId != null && authentication.name == keycloakMemberId.toString())
+        ) {
+            ResponseEntity.ok(memberContactCRUD.create(id, req).toDto())
+        } else {
+            logger.error { "Forbidden to create a contact : not admin nor member with matching keycloak id" }
+            ResponseEntity.status(HttpStatus.FORBIDDEN).build()
+        }
     }
 
     @DeleteMapping("/{id}/contact/{contactId}")
-    fun deleteContact(@PathVariable id: UUID, @PathVariable contactId: UUID): ResponseEntity<MemberDTO> {
+    fun deleteContact(@PathVariable id: UUID, @PathVariable contactId: UUID, authentication: Authentication): ResponseEntity<MemberDTO> {
         logger.info { "Removing Contact:$contactId from Member:$id" }
 
         if (handleNotFound.memberNotFound(id)
             || handleNotFound.contactNotFound(id, contactId))
             return ResponseEntity.notFound().build()
 
-        return ResponseEntity.ok(memberDeleteContact.delete(id, contactId).toDto())
+        val keycloakMemberId = memberKeycloakCRUD.getKeycloakId(id)
+
+        return if(
+            authentication.authorities.contains(SimpleGrantedAuthority("admin")) ||
+            (keycloakMemberId != null && authentication.name == keycloakMemberId.toString())
+        ) {
+            ResponseEntity.ok(memberContactCRUD.delete(id, contactId).toDto())
+        } else {
+            logger.error { "Forbidden to delete contact method : not admin nor member with matching keycloak id" }
+            ResponseEntity.status(HttpStatus.FORBIDDEN).build()
+        }
+    }
+
+    @GetMapping("/{id}/contact/private")
+    fun getPrivateContactMethods(@PathVariable id: UUID, authentication: Authentication): ResponseEntity<List<ContactDTO>> {
+        logger.info { "Retrieving private contact methods of Member:$id" }
+
+        if (handleNotFound.memberNotFound(id)) {
+            return ResponseEntity.notFound().build()
+        }
+
+        val keycloakMemberId = memberKeycloakCRUD.getKeycloakId(id)
+
+        return if (
+            authentication.authorities.contains(SimpleGrantedAuthority("admin")) ||
+            (keycloakMemberId != null && authentication.name == keycloakMemberId.toString())
+        ) {
+            ResponseEntity.ok(
+                memberContactCRUD.getPrivateMethods(id)
+                    .map { it.toDto() }
+            )
+        } else {
+            logger.error { "Forbidden to retrieve private contacts : not admin nor member with matching keycloak id" }
+            ResponseEntity.status(HttpStatus.FORBIDDEN).build()
+        }
     }
 
     @PostMapping("/{id}/participation/{eventId}/{teamId}")
@@ -127,7 +178,8 @@ fun Member.toDto() = MemberDTO(
     firstname = firstname,
     contacts = contacts.map { it.toDto() },
     profilePictureLink = profilePictureLink,
-    participations = participations.map { it.toDto() }
+    participations = participations.map { it.toDto() },
+    keycloakId = keycloakId
 )
 
 fun MemberPartialDTO.toObject() = MemberPartial(
@@ -149,4 +201,5 @@ fun Contact.toDto() = ContactDTO(
     id = id,
     platform = platform,
     link = link,
+    public = public
 )

@@ -1,5 +1,6 @@
 package org.breizhcamp.kalon.infrastructure.db.repos
 
+import org.breizhcamp.kalon.infrastructure.db.model.ContactDB
 import org.breizhcamp.kalon.infrastructure.db.model.MemberDB
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Modifying
@@ -12,10 +13,10 @@ interface MemberRepo: JpaRepository<MemberDB, UUID>, MemberRepoCustom {
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("""
-        INSERT INTO contact(member_id, platform, link) 
-        VALUES (?, ?, ?)
+        INSERT INTO contact(member_id, platform, link, public) 
+        VALUES (?, ?, ?, ?)
     """, nativeQuery = true)
-    fun addContact(memberId: UUID, platform: String, link: String)
+    fun addContact(memberId: UUID, platform: String, link: String, public: Boolean)
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("""
@@ -31,7 +32,7 @@ interface MemberRepo: JpaRepository<MemberDB, UUID>, MemberRepoCustom {
     @Query("""
         INSERT INTO member(lastname, firstname) 
         VALUES (?, ?)
-        RETURNING id, lastname, firstname, profile_picture_lnk
+        RETURNING member.*
     """, nativeQuery = true)
     fun createMember(lastname: String, firstname: String): MemberDB
 
@@ -56,5 +57,20 @@ interface MemberRepo: JpaRepository<MemberDB, UUID>, MemberRepoCustom {
         WHERE id = ?1 
     """, nativeQuery = true)
     fun updatePartial(id: UUID, lastname: String?, firstname: String?, profilePictureLink: String?)
+
+    @Query("""
+        SELECT contact FROM ContactDB contact WHERE contact.memberId = ?1 AND contact.public
+    """)
+    fun getPublicContacts(id: UUID): Set<ContactDB>
+
+    @Query("""
+        SELECT member.keycloakId FROM MemberDB member WHERE member.id = ?1
+    """)
+    fun getKeycloakIdById(id: UUID): UUID?
+
+    @Query("""
+        SELECT contact FROM ContactDB contact WHERE contact.memberId = ?1 AND NOT contact.public
+    """)
+    fun getPrivateContacts(id: UUID): Set<ContactDB>
 
 }

@@ -11,7 +11,8 @@ fun MemberDB.toMember() = Member(
     firstname = firstname,
     contacts = contacts.map { it.toContact() }.toSet(),
     profilePictureLink = profilePictureLink,
-    participations = emptySet()
+    participations = emptySet(),
+    keycloakId = keycloakId
 )
 
 fun MemberParticipationDB.toParticipation() = MemberParticipation(

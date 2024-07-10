@@ -6,4 +6,5 @@ data class Contact(
     val id: UUID,
     val platform: String,
     val link: String,
+    val public: Boolean
 )

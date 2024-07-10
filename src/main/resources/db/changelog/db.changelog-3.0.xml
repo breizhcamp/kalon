@@ -12,4 +12,16 @@
         <modifyDataType tableName="event" columnName="debut_inscription" newDataType="date"/>
         <modifyDataType tableName="event" columnName="fin_inscription" newDataType="date"/>
     </changeSet>
+
+    <changeSet id="1" author="Claire">
+        <addColumn tableName="member">
+            <column name="keycloak_id" type="uuid"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="2" author="Claire">
+        <addColumn tableName="contact">
+            <column name="public" type="boolean" defaultValueBoolean="true"><constraints nullable="false"/></column>
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>

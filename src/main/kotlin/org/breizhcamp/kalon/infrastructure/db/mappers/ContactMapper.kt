@@ -7,4 +7,5 @@ fun ContactDB.toContact() = Contact(
     id = id,
     platform = platform,
     link = link,
+    public = public
 )

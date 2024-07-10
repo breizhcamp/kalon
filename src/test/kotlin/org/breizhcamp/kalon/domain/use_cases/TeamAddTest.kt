@@ -3,7 +3,7 @@ package org.breizhcamp.kalon.domain.use_cases
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.every
 import io.mockk.verify
-import org.breizhcamp.kalon.application.dto.TeamCreationReq
+import org.breizhcamp.kalon.application.requests.TeamCreationReq
 import org.breizhcamp.kalon.domain.use_cases.ports.TeamPort
 import org.breizhcamp.kalon.testUtils.generateRandomTeam
 import org.junit.jupiter.api.Assertions.assertEquals

@@ -16,5 +16,7 @@ data class MemberDB(
     )
     val contacts: Set<ContactDB>,
     @Column(name = "profile_picture_lnk")
-    val profilePictureLink: String?
+    val profilePictureLink: String?,
+    @Column(name = "keycloak_id")
+    val keycloakId: UUID?
 )

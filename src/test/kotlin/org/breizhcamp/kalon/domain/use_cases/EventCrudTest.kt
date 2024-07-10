@@ -5,7 +5,7 @@ import io.mockk.Runs
 import io.mockk.every
 import io.mockk.just
 import io.mockk.verify
-import org.breizhcamp.kalon.application.dto.EventCreationReq
+import org.breizhcamp.kalon.application.requests.EventCreationReq
 import org.breizhcamp.kalon.domain.entities.EventFilter
 import org.breizhcamp.kalon.domain.entities.EventPartial
 import org.breizhcamp.kalon.domain.use_cases.ports.EventPort

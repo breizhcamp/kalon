@@ -5,5 +5,6 @@ import java.util.*
 data class ContactDTO(
     val id: UUID,
     val platform: String,
-    val link: String
+    val link: String,
+    val public: Boolean
 )

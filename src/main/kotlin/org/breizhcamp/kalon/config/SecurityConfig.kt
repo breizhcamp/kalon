@@ -44,15 +44,15 @@ class SecurityConfig {
                     }
                 }
             }
-            .authorizeHttpRequests { it.requestMatchers(HttpMethod.GET, "/api/**").hasAuthority("kalon") }
-            .authorizeHttpRequests { it.requestMatchers(HttpMethod.POST, "/api/**").hasAuthority("admin") }
-            .authorizeHttpRequests { it.requestMatchers(HttpMethod.PUT, "/api/**").hasAuthority("admin") }
-            .authorizeHttpRequests { it.requestMatchers(HttpMethod.DELETE, "/api/**").hasAuthority("admin") }
+            .authorizeHttpRequests { it.requestMatchers(HttpMethod.GET, "/api/**").hasRole("KALON") }
+            .authorizeHttpRequests { it.requestMatchers(HttpMethod.POST, "/api/**").hasRole("ADMIN") }
+            .authorizeHttpRequests { it.requestMatchers(HttpMethod.PUT, "/api/**").hasRole("ADMIN") }
+            .authorizeHttpRequests { it.requestMatchers(HttpMethod.DELETE, "/api/**").hasRole("ADMIN") }
             // Filter methods are called with a POST http verb, but should be able to be called by everyone who has access to the app
-            .authorizeHttpRequests { it.requestMatchers(HttpMethod.POST, "/api/**/filter/**").hasAuthority("kalon") }
+            .authorizeHttpRequests { it.requestMatchers(HttpMethod.POST, "/api/**/filter/**").hasRole("KALON") }
             // These requests can be done by both admins and the member which owns the contact methods, so the authorization is handled in the controller layer
-            .authorizeHttpRequests { it.requestMatchers(HttpMethod.POST, "/api/**/contact/**").hasAuthority("kalon") }
-            .authorizeHttpRequests { it.requestMatchers(HttpMethod.DELETE, "/api/**/contact/**").hasAuthority("kalon") }
+            .authorizeHttpRequests { it.requestMatchers(HttpMethod.POST, "/api/**/contact/**").hasRole("KALON") }
+            .authorizeHttpRequests { it.requestMatchers(HttpMethod.DELETE, "/api/**/contact/**").hasRole("KALON") }
             .oauth2Client(Customizer.withDefaults())
             .build()
     }
@@ -90,7 +90,7 @@ class SecurityConfig {
     }
 
     private fun generateAuthoritiesForClaim(roles: Collection<String>): Collection<GrantedAuthority> =
-        roles.map { SimpleGrantedAuthority(it) }
+        roles.map { SimpleGrantedAuthority("ROLE_${it.uppercase()}") }
 }
 
 @Configuration

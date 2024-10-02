@@ -38,6 +38,7 @@ class EventAdapter (
         return Optional.of(event)
     }
 
+    @Transactional
     override fun update(id: Int, partial: EventPartial): Event {
         eventRepo.updateInfos(
             id = id,

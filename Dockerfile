@@ -7,7 +7,8 @@ COPY pom.xml .
 COPY src src
 
 RUN ./mvnw install -DskipTests
-RUN mkdir -p target/dependency && (cd target/dependency; jar -xf ../*.jar)
+WORKDIR /workspace/app/target/dependency
+RUN jar -xf ../*.jar
 
 FROM eclipse-temurin:17-jdk-alpine
 VOLUME /tmp

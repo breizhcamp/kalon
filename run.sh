@@ -4,7 +4,7 @@
 CURRENT_PATH="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
 DC_FILE="$CURRENT_PATH/docker-compose.yml"
 DC_PROD_FILE="$CURRENT_PATH/docker-compose-prod.yml"
-IMAGE_NAME="kalon:latest"
+IMAGE_NAME="breizhcamp/kalon:latest"
 
 ARGS=()
 HELP=0 VERBOSE=0
@@ -72,8 +72,9 @@ function build() {
 
 function scan_trivy() {
     info "Execute a scan to find vulnerabilities"
-    debug "docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:0.18.3 $IMAGE_NAME"
-    docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:0.18.3 $IMAGE_NAME
+    local cmd_trivy="docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:0.18.3 --severity HIGH,CRITICAL $IMAGE_NAME"
+    debug "$cmd_trivy"
+    exec $cmd_trivy
     return 0
 }
 

@@ -19,7 +19,7 @@ function info() {
 
 function debug() {
     if [[ $((VERBOSE)) -gt 0 ]]; then
-        echo -e "$(colors 'B')$*$(colors 'N')"
+        echo -e "$(colors 'G')$*$(colors 'N')"
     fi
     return 0
 }

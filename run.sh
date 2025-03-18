@@ -5,10 +5,11 @@ CURRENT_PATH="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
 DC_FILE="$CURRENT_PATH/docker-compose.yml"
 DC_PROD_FILE="$CURRENT_PATH/docker-compose-prod.yml"
 IMAGE_NAME="breizhcamp/kalon:latest"
+IMAGE_TRIVY="aquasec/trivy:0.18.3"
 
 ARGS=()
 HELP=0 VERBOSE=0
-PROD=0 UP=0 DOWN=0 BUILD=0 LINT=0
+START=0 STOP=0 DOWN=0 BUILD=0 LINT=0
 
 source "$CURRENT_PATH/libs/utils.sh"
 
@@ -17,12 +18,12 @@ function display_help() {
     output="
 $(colors 'Y')Usage$(colors 'W') $(basename "$0") [OPTIONS] COMMAND
 $(colors 'Y')Commands:$(colors 'N')
-$(colors 'G')up$(colors 'W')                  Initialize and creating containers
+$(colors 'G')start$(colors 'W')               Initialize and creating containers
+$(colors 'G')stop$(colors 'W')                Stopping containers
 $(colors 'G')down$(colors 'W')                Stopping/removing containers, networks and volumes
 $(colors 'G')build$(colors 'W')               Building docker image
-$(colors 'G')lint$(colors 'W')                Use hadolint to lint the Dockerfile
+$(colors 'G')lint$(colors 'W')                Lint the Dockerfile
 $(colors 'Y')Options:$(colors 'N')
-$(colors 'G')-p, --prod$(colors 'W')          Starting kalon container
 $(colors 'G')-v, --verbose$(colors 'W')       Make the command more talkative
 $(colors 'G')-h, --help$(colors 'W')          Display help
     "
@@ -30,58 +31,59 @@ $(colors 'G')-h, --help$(colors 'W')          Display help
     return 0
 }
 
-function up() {
+function start() {
     if ! [[ -f .env  ]]; then
       info "Creating an .env file"
       cp .env-sample .env
     fi
     info "Creating and starting Docker containers"
-    # postgresql
-    debug "docker compose -f $DC_FILE up --build -d"
-    ! docker compose -f "$DC_FILE" up --build -d && return 1
-    # kalon
-    if [[ $PROD -gt 0 ]]; then
-        debug "docker compose -f $DC_PROD_FILE up --build -d"
-        ! docker compose -f "$DC_PROD_FILE" up --build -d && return 2
-    fi
+    local cmd="docker compose -f $DC_FILE -f $DC_PROD_FILE up --build -d"
+    debug "$cmd"
+    ! $cmd && error "Containers cannot be started" && return 1
+    return 0
+}
+
+function stop() {
+    info "Stopping Docker containers"
+    local cmd="docker compose -f $DC_FILE -f $DC_PROD_FILE stop"
+    debug "$cmd"
+    ! $cmd && error "Containers cannot be stopped" && return 1
     return 0
 }
 
 function down() {
     info "Remove Docker containers, networks and volumes"
-    # postgresql
-    debug "docker compose -f $DC_FILE down --volumes"
-    ! docker compose -f "$DC_FILE" down --volumes && return 1
-    # kalon
-    debug "docker compose -f $DC_PROD_FILE down --volumes"
-    ! docker compose -f "$DC_PROD_FILE" down --volumes && return 2
+    local cmd="docker compose -f $DC_FILE -f $DC_PROD_FILE down --volumes"
+    debug "$cmd"
+    ! $cmd && error "Containers cannot be removed" && return 1
     return 0
 }
 
 function build() {
     info "Build Docker image"
-    debug "docker compose -f $DC_PROD_FILE build"
-    ! docker compose -f "$DC_PROD_FILE" build && return 1
+    local cmd="docker compose -f $DC_PROD_FILE build"
+    debug "$cmd"
+    ! $cmd && error "Docker image cannot be built" && return 1
     if [ -z "$(docker images -q $IMAGE_NAME 2> /dev/null)" ]; then
-      error "Docker image failed to be created"
-      return 2
+      error "Docker image failed to be created" && return 1
     fi
-    ! scan_trivy && return 1
+    ! scan_trivy && error "Error executing trivy scan" && return 1
     return 0
 }
 
 function scan_trivy() {
     info "Execute a scan to find vulnerabilities"
-    local cmd_trivy="docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:0.18.3 --severity HIGH,CRITICAL $IMAGE_NAME"
-    debug "$cmd_trivy"
-    exec $cmd_trivy
+    local cmd="docker run --rm -v /var/run/docker.sock:/var/run/docker.sock $IMAGE_TRIVY --severity HIGH,CRITICAL $IMAGE_NAME"
+    debug "$cmd"
+    ! exec $cmd && return 1
     return 0
 }
 
 function lint_dockerfile() {
-    info "Run hadolint"
-    debug "docker run --rm -i hadolint/hadolint < Dockerfile"
-    ! docker run --rm -i hadolint/hadolint < Dockerfile && return 1
+    info "Run docker build --check"
+    cmd="docker build --check --debug ."
+    debug "$cmd"
+    ! exec $cmd < Dockerfile && error "Error executing a check" && return 1
     return 0
 }
 
@@ -91,18 +93,18 @@ function check_opts() {
     read -ra opts <<< "$@"
     for opt in "${opts[@]}"; do
         case "$opt" in
-            up) UP=1 ; ARGS+=("$opt") ;;
+            start) START=1 ; ARGS+=("$opt") ;;
+            stop) STOP=1 ; ARGS+=("$opt") ;;
             down) DOWN=1 ; ARGS+=("$opt") ;;
             build) BUILD=1 ; ARGS+=("$opt") ;;
             lint) LINT=1 ;;
-            --prod|-p) PROD=1 ;;
             --verbose|-v) VERBOSE=1 ;;
             --help) HELP=1 ;;
             *) ARGS+=("$opt") ;;
         esac
     done
     # Help is displayed if no option is passed as script parameter
-    if [[ $((HELP+UP+DOWN+BUILD+LINT)) -eq 0 ]]; then
+    if [[ $((HELP+START+STOP+DOWN+BUILD+LINT)) -eq 0 ]]; then
         HELP=1
     fi
     return 0
@@ -117,20 +119,24 @@ function main() {
         return 0
     fi
     # Starting Docker containers
-    if [[ $UP -gt 0 ]]; then
-        ! up && return 3
+    if [[ $START -gt 0 ]]; then
+        ! start && return 3
+    fi
+    # Stopping containers
+    if [[ $STOP -gt 0 ]]; then
+        ! stop && return 4
     fi
     # Stopping and remove containers, networks and volumes
     if [[ $DOWN -gt 0 ]]; then
-        ! down && return 4
+        ! down && return 5
     fi
     # Building docker image
     if [[ $BUILD -gt 0 ]]; then
-        ! build && return 5
+        ! build && return 6
     fi
     # Lint Dockerfile
     if [[ $LINT -gt 0 ]]; then
-        ! lint_dockerfile && return 6
+        ! lint_dockerfile && return 7
     fi
     return 0
 }

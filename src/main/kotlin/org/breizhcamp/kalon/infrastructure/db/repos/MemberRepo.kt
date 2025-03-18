@@ -12,7 +12,7 @@ interface MemberRepo: JpaRepository<MemberDB, UUID>, MemberRepoCustom {
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("""
-        INSERT INTO contact(member_id, platform, link) 
+        INSERT INTO contact(member_id, platform, link)
         VALUES (?, ?, ?)
     """, nativeQuery = true)
     fun addContact(memberId: UUID, platform: String, link: String)
@@ -29,7 +29,7 @@ interface MemberRepo: JpaRepository<MemberDB, UUID>, MemberRepoCustom {
     fun existsContactByIds(id: UUID, contactId: UUID): Boolean
 
     @Query("""
-        INSERT INTO member(lastname, firstname) 
+        INSERT INTO member(lastname, firstname)
         VALUES (?, ?)
         RETURNING id, lastname, firstname, profile_picture_lnk
     """, nativeQuery = true)
@@ -38,12 +38,12 @@ interface MemberRepo: JpaRepository<MemberDB, UUID>, MemberRepoCustom {
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("""
         UPDATE member
-        SET lastname = 
-            CASE WHEN (?2 IS NOT NULL) 
+        SET lastname =
+            CASE WHEN (?2 IS NOT NULL)
             THEN ?2
             ELSE lastname
-            END, 
-        firstname = 
+            END,
+        firstname =
             CASE WHEN (?3 IS NOT NULL)
             THEN ?3
             ELSE firstname
@@ -53,7 +53,7 @@ interface MemberRepo: JpaRepository<MemberDB, UUID>, MemberRepoCustom {
             THEN ?4
             ELSE profile_picture_lnk
             END
-        WHERE id = ?1 
+        WHERE id = ?1
     """, nativeQuery = true)
     fun updatePartial(id: UUID, lastname: String?, firstname: String?, profilePictureLink: String?)
 

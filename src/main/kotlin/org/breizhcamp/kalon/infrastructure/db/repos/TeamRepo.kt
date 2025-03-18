@@ -11,7 +11,7 @@ import java.util.*
 interface TeamRepo: JpaRepository<TeamDB, UUID>, TeamRepoCustom {
 
     @Query("""
-        INSERT INTO team(name) 
+        INSERT INTO team(name)
         VALUES (?)
         RETURNING *
     """, nativeQuery = true)
@@ -20,17 +20,17 @@ interface TeamRepo: JpaRepository<TeamDB, UUID>, TeamRepoCustom {
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("""
         UPDATE team
-        SET name = 
-            CASE WHEN (?2 IS NOT NULL) 
+        SET name =
+            CASE WHEN (?2 IS NOT NULL)
             THEN ?2
             ELSE name
-            END, 
-        description = 
+            END,
+        description =
             CASE WHEN (?3 IS NOT NULL)
             THEN ?3
             ELSE description
             END
-        WHERE id = ?1 
+        WHERE id = ?1
     """, nativeQuery = true)
     fun updatePartial(id: UUID, name: String?, description: String?)
 

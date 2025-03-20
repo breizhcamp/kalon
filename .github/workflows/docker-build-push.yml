@@ -10,7 +10,7 @@ env:
 
 jobs:
 
-  docker-build:
+  docker-build-push:
     runs-on: ubuntu-latest
     steps:
       - name: Check out code

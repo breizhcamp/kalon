@@ -9,7 +9,7 @@ IMAGE_TRIVY="aquasec/trivy:0.18.3"
 
 ARGS=()
 HELP=0 VERBOSE=0
-START=0 STOP=0 DOWN=0 BUILD=0 LINT=0
+START=0 STOP=0 DOWN=0 BUILD=0 LINT=0 GITLEAKS=0
 
 source "$CURRENT_PATH/libs/utils.sh"
 
@@ -23,6 +23,7 @@ $(colors 'G')stop$(colors 'W')                Stopping containers
 $(colors 'G')down$(colors 'W')                Stopping/removing containers, networks and volumes
 $(colors 'G')build$(colors 'W')               Building docker image
 $(colors 'G')lint$(colors 'W')                Lint the Dockerfile
+$(colors 'G')gitleaks$(colors 'W')            Detecting secrets like passwords, API keys, and tokens in files
 $(colors 'Y')Options:$(colors 'N')
 $(colors 'G')-v, --verbose$(colors 'W')       Make the command more talkative
 $(colors 'G')-h, --help$(colors 'W')          Display help
@@ -87,6 +88,18 @@ function lint_dockerfile() {
     return 0
 }
 
+function scan_gitleaks() {
+    # check if pre-commit is installed
+    if ! command -v pre-commit 2>&1 >/dev/null; then
+        error "pre-commit could not be found" && return 1
+    fi
+    info "Execute a scan with gitleaks and pre-commit to find secrets"
+    local cmd="pre-commit run gitleaks --all-files -v"
+    debug "$cmd"
+    ! exec $cmd && return 1
+    return 0
+}
+
 # Check options passed as script parameters.
 # shellcheck disable=SC2034
 function check_opts() {
@@ -98,13 +111,14 @@ function check_opts() {
             down) DOWN=1 ; ARGS+=("$opt") ;;
             build) BUILD=1 ; ARGS+=("$opt") ;;
             lint) LINT=1 ;;
+            gitleaks) GITLEAKS=1 ;;
             --verbose|-v) VERBOSE=1 ;;
             --help) HELP=1 ;;
             *) ARGS+=("$opt") ;;
         esac
     done
     # Help is displayed if no option is passed as script parameter
-    if [[ $((HELP+START+STOP+DOWN+BUILD+LINT)) -eq 0 ]]; then
+    if [[ $((HELP+START+STOP+DOWN+BUILD+LINT+GITLEAKS)) -eq 0 ]]; then
         HELP=1
     fi
     return 0
@@ -137,6 +151,10 @@ function main() {
     # Lint Dockerfile
     if [[ $LINT -gt 0 ]]; then
         ! lint_dockerfile && return 7
+    fi
+    # Execute a scan with gitleaks and pre-commit to find secrets
+    if [[ $GITLEAKS -gt 0 ]]; then
+        ! scan_gitleaks && return 8
     fi
     return 0
 }

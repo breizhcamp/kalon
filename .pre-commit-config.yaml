@@ -8,3 +8,12 @@ repos:
       - id: check-json
       - id: check-added-large-files
       - id: check-merge-conflict
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.24.0
+    hooks:
+      - id: gitleaks
+        name: Detect hardcoded secrets
+        description: Detect hardcoded secrets using Gitleaks
+        entry: gitleaks git --pre-commit --redact --staged --verbose --no-banner
+        language: golang
+        pass_filenames: false

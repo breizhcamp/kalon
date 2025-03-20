@@ -8,7 +8,7 @@ IMAGE_NAME="breizhcamp/kalon:latest"
 IMAGE_TRIVY="aquasec/trivy:0.18.3"
 
 ARGS=()
-HELP=0 VERBOSE=0
+HELP=0 VERBOSE=0 PROD=0
 START=0 STOP=0 DOWN=0 BUILD=0 LINT=0 GITLEAKS=0
 
 source "$CURRENT_PATH/libs/utils.sh"
@@ -25,6 +25,7 @@ $(colors 'G')build$(colors 'W')               Building docker image
 $(colors 'G')lint$(colors 'W')                Lint the Dockerfile
 $(colors 'G')gitleaks$(colors 'W')            Detecting secrets like passwords, API keys, and tokens in files
 $(colors 'Y')Options:$(colors 'N')
+$(colors 'G')-p, --prod$(colors 'W')          Starting kalon container
 $(colors 'G')-v, --verbose$(colors 'W')       Make the command more talkative
 $(colors 'G')-h, --help$(colors 'W')          Display help
     "
@@ -38,7 +39,10 @@ function start() {
       cp .env-sample .env
     fi
     info "Creating and starting Docker containers"
-    local cmd="docker compose -f $DC_FILE -f $DC_PROD_FILE up --build -d"
+    local cmd="docker compose -f $DC_FILE up --build -d"
+    if [[ $PROD -gt 0 ]]; then
+        cmd="docker compose -f $DC_FILE -f $DC_PROD_FILE up --build -d"
+    fi
     debug "$cmd"
     ! $cmd && error "Containers cannot be started" && return 1
     return 0
@@ -112,6 +116,7 @@ function check_opts() {
             build) BUILD=1 ; ARGS+=("$opt") ;;
             lint) LINT=1 ;;
             gitleaks) GITLEAKS=1 ;;
+            --prod|-p) PROD=1 ;;
             --verbose|-v) VERBOSE=1 ;;
             --help) HELP=1 ;;
             *) ARGS+=("$opt") ;;

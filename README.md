@@ -102,7 +102,7 @@ Pour analyser le fichier Dockerfile, on utilisera la commande ```./run.sh lint``
 ### Identifier les secrets
 
 Pour vérifier que l'on ne commit pas des mots de passe, clés d'API ou token dans le dépôt git, on utilisera
-l'utilisera gitleaks pour analyser les fichiers.
+gitleaks pour analyser les fichiers.
 
 Exemple :
 

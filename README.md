@@ -67,7 +67,8 @@ build               Building docker image
 lint                Lint the Dockerfile
 gitleaks            Detecting secrets like passwords, API keys, and tokens in files
 Options:
--p, --prod          Starting kalon container
+-d, --dev           Starting kalon container with a dev profil
+-p, --prod          Starting kalon container with a prod profi
 -v, --verbose       Make the command more talkative
 -h, --help          Display help
 ```
@@ -86,20 +87,25 @@ Pour démarrer, stopper ou supprimer les containers, on utilisera les commandes 
 * ```./run.sh stop```
 * ```./run.sh down```
 
-L'option **-p** ou **--prod** permet également de démarrer le container kalon, dont l'image est construite à partir des
-sources en local.
+L'option **--dev** ou **--prod** permet également de démarrer le container kalon, dont l'image est construite 
+à partir des sources en local.
 
 Exemple :
 
 ```
-./run.sh start -p
+./run.sh start --dev
 Creating and starting Docker containers
 ...
-[+] Running 3/3
-✔ kalon                    Built                                                                                                                                                                                                                        0.0s
-✔ Container kalon-kalon-1  Started                                                                                                                                                                                                                      0.1s
-✔ Container kalon-db       Started
+[+] Running 4/4
+ ✔ kalon               Built                                                                                                                                                                                                                             0.0s
+ ✔ Network kalon       Created                                                                                                                                                                                                                           0.0s
+ ✔ Container kalon-db  Started                                                                                                                                                                                                                           0.1s
+ ✔ Container kalon     Started
 ```
+
+Remarque :
+
+* On pourra vérifier que le container avec bien démarré avec la commande ```docker logs kalon```.
 
 ### Analyser la syntaxe du code
 

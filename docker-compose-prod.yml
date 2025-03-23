@@ -2,9 +2,17 @@ services:
   kalon:
     build: .
     image: breizhcamp/kalon
+    container_name: kalon
     platform: linux/amd64
     env_file: .env
     environment:
       - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+      - SPRING_PROFILES_ACTIVE=dev
     ports:
       - 8080:8080
+    networks:
+      - kalon
+networks:
+  kalon:
+    name: kalon
+    driver: bridge

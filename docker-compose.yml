@@ -8,3 +8,9 @@ services:
       - POSTGRES_PASSWORD=kalon
     ports:
       - '5432:5432'
+    networks:
+      - kalon
+networks:
+  kalon:
+    name: kalon
+    driver: bridge

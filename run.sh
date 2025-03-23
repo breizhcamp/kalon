@@ -66,7 +66,7 @@ function down() {
 
 function build() {
     info "Build Docker image"
-    local cmd="docker compose -f $DC_PROD_FILE build"
+    local cmd="docker build -t $IMAGE_NAME ."
     debug "$cmd"
     ! $cmd && error "Docker image cannot be built" && return 1
     if [ -z "$(docker images -q $IMAGE_NAME 2> /dev/null)" ]; then

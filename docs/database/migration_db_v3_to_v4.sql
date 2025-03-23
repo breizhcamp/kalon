@@ -3,13 +3,13 @@
 
 ---- #2.0.0 ----
 CREATE TABLE participation (
-	member_id
-	uuid not null
-	constraint fk_member_part
+	member_id 	
+	uuid not null 
+	constraint fk_member_part 
 	references member(id),
-
-	team_id
-	uuid not null
+	
+	team_id 	
+	uuid not null 
 	constraint fk_team_part
 	references team(id),
 
@@ -54,3 +54,4 @@ DROP TABLE member_team;
 
 -- END PHASE_2 --
 -- END CHANGELOG_2.0 --
+

@@ -20,7 +20,7 @@ interface EventRepo: JpaRepository<EventDB, Int>, EventRepoCustom {
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("""
         UPDATE event
-        SET name =          CASE WHEN (?2 IS NOT NULL)  THEN ?2     ELSE name END,
+        SET name =          CASE WHEN (?2 IS NOT NULL)  THEN ?2     ELSE name END, 
         year =              CASE WHEN (?3 IS NOT NULL)  THEN ?3     ELSE year END,
         debut_event =       CASE WHEN (CAST (?4 AS DATE) IS NOT NULL)  THEN CAST(?4 AS DATE) ELSE debut_event END,
         fin_event =         CASE WHEN (CAST (?5 AS DATE) IS NOT NULL)  THEN CAST(?5 AS DATE) ELSE fin_event END,
@@ -29,7 +29,7 @@ interface EventRepo: JpaRepository<EventDB, Int>, EventRepoCustom {
         debut_inscription = CASE WHEN (CAST (?8 AS DATE) IS NOT NULL)  THEN CAST(?8 AS DATE) ELSE debut_inscription END,
         fin_inscription =   CASE WHEN (CAST (?9 AS DATE) IS NOT NULL)  THEN CAST(?9 AS DATE) ELSE fin_inscription END,
         website =           CASE WHEN (?10 IS NOT NULL) THEN ?10    ELSE website END
-        WHERE id = ?1
+        WHERE id = ?1 
     """, nativeQuery = true)
     fun updateInfos(
         id: Int,

@@ -28,7 +28,7 @@
         -->
         <createTable tableName="participation">
             <column name="member_id" type="uuid"><constraints nullable="false" foreignKeyName="FK_MEMBER_PART" references="member(id)" primaryKey="true"/></column>
-            <column name="event_id" type="int"><constraints nullable="false" foreignKeyName="FK_EVENT_PART" references="event(id)" primaryKey="true"/></column>
+            <column name="event_id" type="integer"><constraints nullable="false" foreignKeyName="FK_EVENT_PART" references="event(id)" primaryKey="true"/></column>
             <column name="team_id" type="uuid"><constraints nullable="false" foreignKeyName="FK_TEAM_PART" references="team(id)" primaryKey="true"/></column>
         </createTable>
 

@@ -72,6 +72,12 @@ Options:
 -h, --help          Display help
 ```
 
+### Builder l'image Docker
+
+Pour construire l'image Docker de l'application en local, on utilisera la commande ```./run.sh build```.
+
+Un scan trivy est effectuée afin de rechercher si cette image contient des failles de sécurité. 
+
 ### Gérer les containers
 
 Pour démarrer, stopper ou supprimer les containers, on utilisera les commandes suivantes :

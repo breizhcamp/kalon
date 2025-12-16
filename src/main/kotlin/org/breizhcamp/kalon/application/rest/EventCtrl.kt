@@ -3,8 +3,10 @@ package org.breizhcamp.kalon.application.rest
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.breizhcamp.kalon.application.dto.EventAPI
+import org.breizhcamp.kalon.config.log.KalonMDC
 import org.breizhcamp.kalon.config.log.Log
 import org.breizhcamp.kalon.config.security.IsAdmin
+import org.breizhcamp.kalon.domain.entities.EventId
 import org.breizhcamp.kalon.domain.exceptions.EventIdAlreadyExistsException
 import org.breizhcamp.kalon.domain.exceptions.InconsistentStartEndDateException
 import org.breizhcamp.kalon.domain.use_cases.EventCRUD
@@ -30,6 +32,13 @@ class EventCtrl(
     @IsAdmin
     fun update(@RequestBody @Log eventAPI: EventAPI) {
         eventCRUD.update(eventAPI.toDomain())
+    }
+
+    @Operation(summary = "Delete an existing Event")
+    @DeleteMapping("/{id}")
+    @IsAdmin
+    fun delete(@PathVariable @Log(KalonMDC.EVENT_ID) id: String) {
+        eventCRUD.delete(EventId(id))
     }
 
     @ExceptionHandler(EventIdAlreadyExistsException::class)

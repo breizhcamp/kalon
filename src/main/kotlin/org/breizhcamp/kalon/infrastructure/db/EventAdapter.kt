@@ -22,4 +22,8 @@ class EventAdapter(
     override fun update(event: Event) {
         eventRepo.save(event.toDb())
     }
+
+    override fun delete(eventId: EventId) {
+        eventRepo.deleteById(eventId.value)
+    }
 }

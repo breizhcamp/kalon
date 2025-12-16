@@ -8,5 +8,6 @@ interface EventPort {
     fun isIdExists(eventId: EventId): Boolean
     fun create(event: Event)
     fun update(event: Event)
+    fun delete(eventId: EventId)
 
 }

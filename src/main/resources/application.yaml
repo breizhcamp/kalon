@@ -1,8 +1,18 @@
 spring:
-  application:
-    name: kalon
+  application.name: kalon
+
+  jpa.open-in-view: false
+  liquibase.changeLog: classpath:/db/changelog/db.changelog-master.xml
+  datasource:
+    url: jdbc:postgresql://${POSTGRESQL_HOST}:${POSTGRESQL_PORT}/${POSTGRESQL_DB}?currentSchema=${POSTGRESQL_SCHEMA}
+    username: ${POSTGRESQL_USER}
+    password: ${POSTGRESQL_PASSWORD}
 
   security.oauth2:
     resourceserver:
       jwt:
-        issuer-uri: ${keycloak.url}/realms/BreizhCamp
+        issuer-uri: ${KEYCLOAK_URL}/realms/BreizhCamp
+
+springdoc.packagesToScan: org.breizhcamp.kalon.application.rest
+
+logging.pattern.level: "[u.l:%X{user.login}] [e.i:%X{event.id}] %5p"

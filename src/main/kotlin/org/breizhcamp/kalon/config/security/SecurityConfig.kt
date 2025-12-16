@@ -34,6 +34,8 @@ class SecurityConfig {
             sessionManagement { sessionCreationPolicy = SessionCreationPolicy.STATELESS }
 
             authorizeHttpRequests {
+                authorize("/swagger-ui/**", permitAll)
+                authorize("/v3/api-docs/**", permitAll)
                 authorize(anyRequest, authenticated)
             }
 

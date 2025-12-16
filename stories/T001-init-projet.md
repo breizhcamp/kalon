@@ -6,8 +6,12 @@ Initialisation d'un projet Kotlin Spring Boot (dernière version) avec les dépe
 - Spring Boot Actuator
 - Spring Boot DevTools
 - Spring Configuration Processor
+- Liquibase
+- Springdoc
+- Kotlin logging (oshai/kotlin-logging)
 
 Utilisation d'une base de données PostgreSQL avec un docker-compose.yml pour le développement local.
+Ajouter Mockk et assertK pour les tests unitaires.
 
 # Implémentation
 Créer le projet avec Spring Initializr (https://start.spring.io/) en sélectionnant les dépendances mentionnées ci-dessus.

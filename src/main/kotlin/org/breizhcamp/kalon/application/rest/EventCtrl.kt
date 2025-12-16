@@ -25,6 +25,7 @@ class EventCtrl(
     @Operation(summary = "Create a new Event")
     @PostMapping
     @IsAdmin
+    @ResponseStatus(HttpStatus.CREATED)
     fun create(@RequestBody @Log eventAPI: EventAPI) {
         eventCRUD.create(eventAPI.toDomain())
     }
@@ -32,6 +33,7 @@ class EventCtrl(
     @Operation(summary = "Update an existing Event")
     @PutMapping
     @IsAdmin
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     fun update(@RequestBody @Log eventAPI: EventAPI) {
         eventCRUD.update(eventAPI.toDomain())
     }
@@ -39,6 +41,7 @@ class EventCtrl(
     @Operation(summary = "Delete an existing Event")
     @DeleteMapping("/{id}")
     @IsAdmin
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     fun delete(@PathVariable @Log(KalonMDC.EVENT_ID) id: String) {
         eventCRUD.delete(EventId(id))
     }

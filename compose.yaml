@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:latest
+    image: postgres:15.2
     environment:
       POSTGRES_USER: kalon
       POSTGRES_PASSWORD: kalonpass

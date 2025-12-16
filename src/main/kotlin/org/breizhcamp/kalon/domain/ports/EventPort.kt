@@ -9,5 +9,6 @@ interface EventPort {
     fun create(event: Event)
     fun update(event: Event)
     fun delete(eventId: EventId)
+    fun list(): List<Event>
 
 }

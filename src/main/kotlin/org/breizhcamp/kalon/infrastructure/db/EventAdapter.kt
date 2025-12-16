@@ -5,6 +5,7 @@ import org.breizhcamp.kalon.domain.entities.Event
 import org.breizhcamp.kalon.domain.entities.EventId
 import org.breizhcamp.kalon.domain.ports.EventPort
 import org.breizhcamp.kalon.infrastructure.db.mappers.toDb
+import org.breizhcamp.kalon.infrastructure.db.mappers.toDomain
 import org.breizhcamp.kalon.infrastructure.db.repos.EventRepo
 
 @Adapter
@@ -26,4 +27,6 @@ class EventAdapter(
     override fun delete(eventId: EventId) {
         eventRepo.deleteById(eventId.value)
     }
+
+    override fun list(): List<Event> = eventRepo.findAllByOrderByStartDateDesc().map { it.toDomain() }
 }

@@ -52,6 +52,8 @@ class EventCRUD(
         logger.info { "Event deleted" }
     }
 
+    fun list(): List<Event> = eventPort.list()
+
     private fun checkStartBeforeEndDate(event: Event) {
         if (event.startDate.isAfter(event.endDate)) {
             throw InconsistentStartEndDateException(event.startDate, event.endDate)

@@ -3,9 +3,11 @@ package org.breizhcamp.kalon.application.rest
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.breizhcamp.kalon.application.dto.EventAPI
+import org.breizhcamp.kalon.application.dto.toApi
 import org.breizhcamp.kalon.config.log.KalonMDC
 import org.breizhcamp.kalon.config.log.Log
 import org.breizhcamp.kalon.config.security.IsAdmin
+import org.breizhcamp.kalon.config.security.IsUser
 import org.breizhcamp.kalon.domain.entities.EventId
 import org.breizhcamp.kalon.domain.exceptions.EventIdAlreadyExistsException
 import org.breizhcamp.kalon.domain.exceptions.InconsistentStartEndDateException
@@ -40,6 +42,11 @@ class EventCtrl(
     fun delete(@PathVariable @Log(KalonMDC.EVENT_ID) id: String) {
         eventCRUD.delete(EventId(id))
     }
+
+    @Operation(summary = "List all Events")
+    @GetMapping
+    @IsUser
+    fun list(): List<EventAPI> = eventCRUD.list().map { it.toApi() }
 
     @ExceptionHandler(EventIdAlreadyExistsException::class)
     @ResponseStatus(HttpStatus.CONFLICT)

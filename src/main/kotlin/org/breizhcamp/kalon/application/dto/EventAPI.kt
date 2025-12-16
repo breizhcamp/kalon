@@ -39,3 +39,13 @@ data class EventAPI(
         KalonMDC.EVENT_ID to id,
     )
 }
+
+fun Event.toApi() = EventAPI(
+    id = this.id.value,
+    name = this.name,
+    startDate = this.startDate,
+    endDate = this.endDate,
+    website = this.website,
+    venue = this.venue,
+)
+

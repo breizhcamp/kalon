@@ -14,8 +14,8 @@
 			<column name="name" type="text"><constraints nullable="false" /></column>
 			<column name="start_date" type="date"><constraints nullable="false" /></column>
 			<column name="end_date" type="date"><constraints nullable="false" /></column>
-			<column name="website" type="text"><constraints nullable="false" /></column>
-			<column name="venue" type="text"><constraints nullable="false" /></column>
+			<column name="website" type="text"><constraints nullable="true" /></column>
+			<column name="venue" type="text"><constraints nullable="true" /></column>
 		</createTable>
 	</changeSet>
 

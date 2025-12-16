@@ -18,4 +18,8 @@ class EventAdapter(
     override fun create(event: Event) {
         eventRepo.save(event.toDb())
     }
+
+    override fun update(event: Event) {
+        eventRepo.save(event.toDb())
+    }
 }

@@ -1,0 +1,31 @@
+{
+  "interactiveLogin": true,
+  "httpServer": "NettyWrapper",
+  "tokenCallbacks": [
+    {
+      "issuerId": "kalon",
+      "requestMappings": [
+        {
+          "requestParam": "client_id",
+          "match": "kalon-user",
+          "claims": {
+            "preferred_username": "user",
+            "realm_access": {
+              "roles": ["kalon_user"]
+            }
+          }
+        },
+        {
+          "requestParam": "client_id",
+          "match": "kalon-admin",
+          "claims": {
+            "preferred_username": "admin",
+            "realm_access": {
+              "roles": ["kalon_admin"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,3 +1,8 @@
 spring:
   application:
     name: kalon
+
+  security.oauth2:
+    resourceserver:
+      jwt:
+        issuer-uri: ${keycloak.url}/realms/BreizhCamp

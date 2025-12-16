@@ -2,7 +2,7 @@
 
 Système de configuration pour l'organisation de conférences.
 
-Table des matières: [🚀 Démarrage Rapide](#-démarrage-rapide) • [🧱 Architecture Hexagonale](#-architecture-hexagonale)
+Table des matières: [🚀 Démarrage Rapide](#-démarrage-rapide) • [🧱 Architecture](#-architecture)
 
 ## 🚀 Démarrage Rapide
 
@@ -22,7 +22,26 @@ docker-compose up -d
 
 **Configuration par défaut :**
 - URL : http://localhost:4010/
-- Base de données : localhost:4011 (utilisateur/mot de passe : postgres / postgres)
+- Base de données : localhost:4011 (base/utilisateur/mot de passe : kalon / kalon / kalonpass)
+- OAuth2 Mock Server : localhost:4012
+
+### Faire un appel curl :
+
+Récupérer un token d'accès via OAuth2 Mock Server
+```bash
+TOKEN=$(curl -s -d 'grant_type=password' \
+  -d 'username=my-user' \
+  -d 'password=123' \
+  -d 'client_id=kalon-user' \
+  localhost:4012/kalon/token | jq -r .access_token)
+```
+
+Utilisez le client id `kalon-user` pour un utilisateur standard ou `kalon-admin` pour un administrateur.
+
+Appeler un endpoint protégé avec le token :
+```bash
+curl -H "Authorization: Bearer ${TOKEN}" http://localhost:4010/user
+```
 
 ### Construire un JAR :
 
@@ -31,7 +50,7 @@ docker-compose up -d
 java -jar target/kalon-0.0.1-SNAPSHOT.jar --spring.profiles.active=dev
 ```
 
-## 🧱 Architecture Hexagonale
+## 🧱 Architecture
 
 Le projet suit une architecture en couches inspirée du pattern hexagonal :
 
@@ -48,4 +67,3 @@ infrastructure/    (Adaptateurs, JPA repositories, modèles de persistance)
 - **Annotations personnalisées** : `@Adapter`, `@UseCase`, `@Tx` marquent clairement les composants
 - **Dépendances unidirectionnelles** : Des couches externes vers les couches internes
 - **Testabilité** : L'architecture permet des tests unitaires et d'intégration isolés
-

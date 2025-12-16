@@ -1,0 +1,9 @@
+services:
+  postgres:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: kalon
+      POSTGRES_PASSWORD: kalonpass
+      POSTGRES_DB: kalon
+    ports:
+      - "4011:5432"

@@ -1,0 +1,11 @@
+package org.breizhcamp.kalon.domain.ports
+
+import org.breizhcamp.kalon.domain.entities.Event
+import org.breizhcamp.kalon.domain.entities.EventId
+
+interface EventPort {
+
+    fun isIdExists(eventId: EventId): Boolean
+    fun create(event: Event)
+
+}

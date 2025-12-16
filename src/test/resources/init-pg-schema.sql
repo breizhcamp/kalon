@@ -1,0 +1,2 @@
+CREATE SCHEMA breizhcamp;
+CREATE SCHEMA jsc;

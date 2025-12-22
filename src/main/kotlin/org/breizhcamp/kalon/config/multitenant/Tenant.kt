@@ -2,8 +2,11 @@ package org.breizhcamp.kalon.config.multitenant
 
 import org.breizhcamp.kalon.config.TenantConfig
 
+@JvmInline
+value class TenantName(val value: String)
+
 data class Tenant(
-    val name: String,
+    val name: TenantName,
     val domain: String,
     val schema: String,
     val issuerUri: String,
@@ -12,7 +15,7 @@ data class Tenant(
 )
 
 fun TenantConfig.toTenant() = Tenant(
-    name = this.name,
+    name = TenantName(this.name),
     domain = this.domain,
     schema = this.schema,
     issuerUri = this.issuerUri,

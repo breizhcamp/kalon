@@ -36,7 +36,7 @@ class TenantJWSKeySelector(
 
     private fun fromIssuer(issuerUri: IssuerUri): JWSKeySelector<SecurityContext?> {
         val tenant = tenantRepo.getFromIssuerUri(issuerUri.uri)
-            ?: throw IllegalArgumentException("No tenant found for issuer '$issuerUri'")
+            ?: throw IllegalArgumentException("No tenant found for issuer '${issuerUri.uri}'")
 
         //TODO retrieve jwksUri from well-known endpoint if not defined
         val jwksUri = requireNotNull(tenant.jwksUri) { "No jwksUri in tenant '${tenant.name}'" }

@@ -6,21 +6,17 @@ import jakarta.servlet.ServletRequest
 import jakarta.servlet.ServletResponse
 import org.breizhcamp.kalon.config.log.KalonMDC
 import org.slf4j.MDC
-import org.springframework.core.annotation.Order
-import org.springframework.stereotype.Component
 
-@Component
-@Order(-200) // Before Spring Security Filter Chain
-class TenantFilter(
+abstract class TenantFilter(
     private val tenantIdResolver: TenantIdResolver,
-    private val tenantRepo: TenantRepo,
 ): Filter {
 
+    abstract fun getTenantId(request: ServletRequest): Tenant?
+
     override fun doFilter(request: ServletRequest, response: ServletResponse, chain: FilterChain) {
-        val host = request.serverName
-        tenantRepo.getTenant(host)?.let {
+        getTenantId(request)?.let {
             tenantIdResolver.current = it
-            MDC.put(KalonMDC.TENANT, it.name)
+            MDC.put(KalonMDC.TENANT, it.name.value)
         }
 
         try {
@@ -30,4 +26,5 @@ class TenantFilter(
             MDC.remove(KalonMDC.TENANT)
         }
     }
+
 }

@@ -1,6 +1,8 @@
 package org.breizhcamp.kalon.it
 
 import com.fasterxml.jackson.annotation.JsonProperty
+import org.breizhcamp.kalon.config.TenantConfig
+import org.breizhcamp.kalon.config.multitenant.TenantName
 import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureRestTestClient
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection
@@ -8,6 +10,7 @@ import org.springframework.http.MediaType
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
+import org.springframework.test.web.servlet.client.RestTestClient
 import org.springframework.util.LinkedMultiValueMap
 import org.springframework.web.client.RestClient
 import org.springframework.web.client.body
@@ -24,11 +27,11 @@ import org.testcontainers.utility.MountableFile
 @AutoConfigureRestTestClient
 abstract class AbstractItTest {
 
-    fun getAdminToken(): String = getToken("kalon-admin")
-    fun getUserToken(): String = getToken("kalon-user")
+    fun getAdminToken(tenant: TenantName): String = getToken(tenant, "kalon-admin")
+    fun getUserToken(tenant: TenantName): String = getToken(tenant, "kalon-user")
 
-    fun getToken(clientId: String): String {
-        val client = RestClient.create(getIssuerUri())
+    fun getToken(tenant: TenantName, clientId: String): String {
+        val client = RestClient.create(getOauthUri())
         val params = LinkedMultiValueMap<String, String>()
         params.add("grant_type", "password")
         params.add("username", "user")
@@ -36,7 +39,7 @@ abstract class AbstractItTest {
         params.add("client_id", clientId)
 
         return client.post()
-            .uri("/token")
+            .uri("{tenant}/token", tenant.value)
             .contentType(MediaType.APPLICATION_FORM_URLENCODED)
             .body(params)
             .retrieve()
@@ -44,16 +47,26 @@ abstract class AbstractItTest {
             ?: error("No token returned")
     }
 
+    fun createClient(webClient: RestTestClient, tenant: TenantName, authToken: String) =
+        webClient.mutate()
+            .defaultHeader("Authorization", "Bearer $authToken")
+            .defaultHeader("X-Tenant", tenant.value)
+            .build()
+
     companion object {
 
         @Container
         @ServiceConnection
         @JvmStatic
-        val postgresql = PostgreSQLContainer("postgres:15.2")
+        val postgresql: PostgreSQLContainer = PostgreSQLContainer("postgres:15.2")
+            .withCopyFileToContainer(
+                MountableFile.forClasspathResource("init-pg-schema.sql"),
+                "/docker-entrypoint-initdb.d/init.sql"
+            )
 
         @Container
         @JvmStatic
-        val oAuth2Server = GenericContainer(DockerImageName.parse("ghcr.io/navikt/mock-oauth2-server:3.0.1"))
+        val oAuth2Server: GenericContainer<*> = GenericContainer(DockerImageName.parse("ghcr.io/navikt/mock-oauth2-server:3.0.1"))
             .withExposedPorts(8080)
             .withEnv("JSON_CONFIG_PATH", "/config/mock-oauth2-server.json")
             .withCopyFileToContainer(
@@ -62,14 +75,32 @@ abstract class AbstractItTest {
             )
 
         @JvmStatic
-        fun getIssuerUri(): String {
-            return "http://${oAuth2Server.host}:${oAuth2Server.getMappedPort(8080)}/kalon"
+        fun getOauthUri(): String {
+            return "http://${oAuth2Server.host}:${oAuth2Server.getMappedPort(8080)}"
         }
 
         @DynamicPropertySource
         @JvmStatic
-        fun oAuth2Properties(registry: DynamicPropertyRegistry) {
-            registry.add("spring.security.oauth2.resourceserver.jwt.issuer-uri") { getIssuerUri() }
+        fun oAuth2TenantProperties(registry: DynamicPropertyRegistry) {
+            registry.add("kalon.tenants.default") { "breizhcamp" }
+
+            val breizhcamp = TenantConfig(
+                name = "breizhcamp",
+                domain = "breizhcamp.org", //not used in tests, get the Tenant from the header
+                schema = "breizhcamp",
+                issuerUri = getOauthUri() + "/breizhcamp",
+                jwksUri = getOauthUri() + "/breizhcamp/jwks"
+            )
+
+            val jsc = TenantConfig(
+                name = "jsc",
+                domain = "jsc.org",  //not used in tests, get the Tenant from the header
+                schema = "jsc",
+                issuerUri = getOauthUri() + "/jsc",
+                jwksUri = getOauthUri() + "/jsc/jwks"
+            )
+
+            registry.add("kalon.tenants.config") { listOf(breizhcamp, jsc) }
         }
     }
 

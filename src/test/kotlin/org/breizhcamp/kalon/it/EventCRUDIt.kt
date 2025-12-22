@@ -1,5 +1,6 @@
 package org.breizhcamp.kalon.it
 
+import org.breizhcamp.kalon.config.multitenant.TenantName
 import org.breizhcamp.kalon.helpers.EventHelper
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -9,8 +10,8 @@ class EventCRUDIt: AbstractItTest() {
 
     @Test
     fun `should create, read, update and delete an event`(@Autowired webClient: RestTestClient) {
-        val token = getAdminToken()
-        val client = webClient.mutate().defaultHeader("Authorization", "Bearer $token").build()
+        val tenantName = TenantName("breizhcamp")
+        val client = createClient(webClient, tenantName, getAdminToken(tenantName))
 
         val event = EventHelper.get()
         val eventId = event.id.value
@@ -36,6 +37,11 @@ class EventCRUDIt: AbstractItTest() {
         client.listEvents()
             .jsonPath("$[?(@.id == '$eventId' && @.name == 'BreizhCamp 2025 - Updated')]").exists()
 
+        // Check other tenant that the event does not exist
+        val jscTenant = TenantName("jsc")
+        val jscClient = createClient(webClient, jscTenant, getAdminToken(jscTenant))
+        jscClient.listEvents().json("[]")
+
         // Delete Event
         client.delete()
             .uri("/events/{id}", eventId)
@@ -48,8 +54,8 @@ class EventCRUDIt: AbstractItTest() {
 
     @Test
     fun `test user permissions`(@Autowired webClient: RestTestClient) {
-        val token = getUserToken()
-        val client = webClient.mutate().defaultHeader("Authorization", "Bearer $token").build()
+        val tenantName = TenantName("breizhcamp")
+        val client = createClient(webClient, tenantName, getUserToken(tenantName))
         val event = EventHelper.get()
 
         // Try to create Event (should fail)

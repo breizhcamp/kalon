@@ -20,7 +20,7 @@ class TenantIdResolver(
         get() = localCurrentTenant.get()
         set(tenant) = localCurrentTenant.set(tenant)
 
-    val tenant: String
+    val tenant: TenantName
         get() = requireNotNull(current?.name) { "No current tenant" }
 
     fun clear() {

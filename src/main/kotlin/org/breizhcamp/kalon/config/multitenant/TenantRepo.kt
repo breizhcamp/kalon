@@ -10,14 +10,14 @@ class TenantRepo(
 ) {
 
     private val tenants = config.tenants.config.associate { it.domain to it.toTenant() }
-    val default = tenants.values.find { it.name == config.tenants.default }
+    val default = tenants.values.find { it.name.value == config.tenants.default }
         ?: throw IllegalStateException("Default tenant '${config.tenants.default}' not found in configuration")
 
-    fun getTenant(host: String): Tenant? {
-        return tenants[host]
-    }
+    fun fromHost(host: String): Tenant? = tenants[host]
 
-    fun getFromIssuerUri(iss: String): Tenant? {
-        return tenants.values.find { it.issuerUri == iss }
-    }
+    fun fromName(name: TenantName): Tenant? =
+        tenants.values.find { it.name.value == name.value }
+
+    fun getFromIssuerUri(iss: String): Tenant? =
+        tenants.values.find { it.issuerUri == iss }
 }

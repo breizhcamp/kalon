@@ -1,13 +1,17 @@
 package org.breizhcamp.kalon.application.rest
 
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.breizhcamp.kalon.application.dto.EventAPI
-import org.breizhcamp.kalon.application.dto.toApi
+import org.breizhcamp.kalon.application.dto.EventFullAPI
+import org.breizhcamp.kalon.application.dto.toFullApi
+import org.breizhcamp.kalon.application.dto.toSummaryApi
 import org.breizhcamp.kalon.config.log.KalonMDC
 import org.breizhcamp.kalon.config.log.Log
 import org.breizhcamp.kalon.config.security.IsAdmin
 import org.breizhcamp.kalon.config.security.IsUser
+import org.breizhcamp.kalon.domain.entities.Event
 import org.breizhcamp.kalon.domain.entities.EventId
 import org.breizhcamp.kalon.domain.exceptions.EventIdAlreadyExistsException
 import org.breizhcamp.kalon.domain.exceptions.InconsistentStartEndDateException
@@ -26,7 +30,7 @@ class EventCtrl(
     @PostMapping
     @IsAdmin
     @ResponseStatus(HttpStatus.CREATED)
-    fun create(@RequestBody @Log eventAPI: EventAPI) {
+    fun create(@RequestBody @Log eventAPI: EventFullAPI) {
         eventCRUD.create(eventAPI.toDomain())
     }
 
@@ -34,7 +38,7 @@ class EventCtrl(
     @PutMapping
     @IsAdmin
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    fun update(@RequestBody @Log eventAPI: EventAPI) {
+    fun update(@RequestBody @Log eventAPI: EventFullAPI) {
         eventCRUD.update(eventAPI.toDomain())
     }
 
@@ -49,7 +53,16 @@ class EventCtrl(
     @Operation(summary = "List all Events")
     @GetMapping
     @IsUser
-    fun list(): List<EventAPI> = eventCRUD.list().map { it.toApi() }
+    fun list(
+        @Parameter(description = "View type: 'summary' for id and name only, 'full' (default) for complete information")
+        @RequestParam(defaultValue = "full") view: String
+    ): List<EventAPI> {
+        val mapper =  when (view) {
+            "summary" -> Event::toSummaryApi
+            else -> Event::toFullApi
+        }
+        return eventCRUD.list().map { mapper(it) }
+    }
 
     @ExceptionHandler(EventIdAlreadyExistsException::class)
     @ResponseStatus(HttpStatus.CONFLICT)

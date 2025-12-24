@@ -7,12 +7,19 @@ import org.breizhcamp.kalon.domain.entities.Event
 import org.breizhcamp.kalon.domain.entities.EventId
 import java.time.LocalDate
 
-data class EventAPI(
+@Schema(description = "Event information")
+sealed class EventAPI {
+    abstract val id: String
+    abstract val name: String
+}
+
+@Schema(description = "Complete event information")
+data class EventFullAPI(
     @field:Schema(description = "Unique identifier", example = "myevent-2026")
-    val id: String,
+    override val id: String,
 
     @field:Schema(description = "Title of the event", example = "My Event 2026")
-    val name: String,
+    override val name: String,
 
     @field:Schema(description = "Event start date", example = "2026-06-15")
     val startDate: LocalDate,
@@ -25,7 +32,7 @@ data class EventAPI(
 
     @field:Schema(description = "Event venue", example = "Conference Center, City")
     val venue: String?,
-): LogMDC {
+) : EventAPI(), LogMDC {
     fun toDomain() = Event(
         id = EventId(id),
         name = name,
@@ -40,12 +47,26 @@ data class EventAPI(
     )
 }
 
-fun Event.toApi() = EventAPI(
+@Schema(description = "Summary event information with id and name only")
+data class EventSummaryAPI(
+    @field:Schema(description = "Unique identifier", example = "myevent-2026")
+    override val id: String,
+
+    @field:Schema(description = "Title of the event", example = "My Event 2026")
+    override val name: String,
+) : EventAPI()
+
+fun Event.toFullApi() = EventFullAPI(
     id = this.id.value,
     name = this.name,
     startDate = this.startDate,
     endDate = this.endDate,
     website = this.website,
     venue = this.venue,
+)
+
+fun Event.toSummaryApi() = EventSummaryAPI(
+    id = this.id.value,
+    name = this.name,
 )
 

@@ -19,12 +19,16 @@ kalon:
           domain: "localhost:4010"
           schema: breizhcamp
           auth:
-            issuer-uri: https://auth.breizhcamp.org/auth/
+            url: https://auth.breizhcamp.org/auth/
+            issuer-uri: https://auth.breizhcamp.org/auth/realms/BreizhCamp
             jwks-uri: https://auth.freefolks.rocks/auth/realms/BreizhCamp/protocol/openid-connect/certs
             realm: BreizhCamp
           modules:
             - name: orga
               domain: "localhost:4000"
               auth-client-id: orga-front
+          backends:
+            - name: kalon
+              url: "http://localhost:4010"
 
 

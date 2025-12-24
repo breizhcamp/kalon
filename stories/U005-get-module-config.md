@@ -6,7 +6,7 @@ Pour le module 'orga', la configuration est composé de :
   - son URL
   - son royaume
   - son client id
-- URL de Kalon
+- liste des URLs des backends
 
 Lors de l'appel à la resource REST, l'en-tête 'X-Tenant-Host' contient le nom d'hôte 
 dont on souhaite récupérer la configuration et permet de récuépérer la configuration pour le tenant et le module.

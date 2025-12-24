@@ -18,9 +18,11 @@ data class TenantConfig(
     val schema: String,
     val auth: TenantAuth,
     val modules: List<TenantModule> = emptyList(),
+    val backends: List<TenantBackend> = emptyList(),
 )
 
 data class TenantAuth(
+    val url: String,
     val issuerUri: String,
     val jwksUri: String? = null,
     val realm: String,
@@ -30,4 +32,9 @@ data class TenantModule(
     val name: String,
     val domain: String,
     val authClientId: String,
+)
+
+data class TenantBackend(
+    val name: String,
+    val url: String,
 )

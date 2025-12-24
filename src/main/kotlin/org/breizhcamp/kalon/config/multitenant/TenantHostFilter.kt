@@ -11,6 +11,10 @@ class TenantHostFilter(
     private val tenantRepo: TenantRepo,
 ): TenantFilter(tenantIdResolver) {
 
-    override fun getTenantId(request: ServletRequest): Tenant? =
-        tenantRepo.fromHost(request.serverName)
+    override fun getTenantId(request: ServletRequest): Tenant? {
+        var host = request.serverName
+        if (request.serverPort != 443) host += ":${request.serverPort}"
+
+        return tenantRepo.fromHost(host)
+    }
 }

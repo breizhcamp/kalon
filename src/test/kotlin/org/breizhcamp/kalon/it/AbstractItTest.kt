@@ -2,6 +2,7 @@ package org.breizhcamp.kalon.it
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import org.breizhcamp.kalon.config.TenantAuth
+import org.breizhcamp.kalon.config.TenantBackend
 import org.breizhcamp.kalon.config.TenantConfig
 import org.breizhcamp.kalon.config.TenantModule
 import org.breizhcamp.kalon.config.multitenant.TenantName
@@ -81,13 +82,17 @@ abstract class AbstractItTest {
                 domain = "breizhcamp.org", //not used in tests, get the Tenant from the header
                 schema = "breizhcamp",
                 auth = TenantAuth(
+                    url = getOauthUri(),
                     issuerUri = getOauthUri() + "/breizhcamp",
                     jwksUri = getOauthUri() + "/breizhcamp/jwks",
                     realm = "breizhcamp",
                 ),
                 modules = listOf(
-                    TenantModule("orga", "orga.breizhcamp.org", "orga-front")
-                )
+                    TenantModule("orga", "orga.breizhcamp.org", "orga-front"),
+                ),
+                backends = listOf(
+                    TenantBackend(name = "kalon", url = "https://kalon.breizhcamp.org"),
+                ),
             )
 
             val jsc = TenantConfig(
@@ -95,13 +100,17 @@ abstract class AbstractItTest {
                 domain = "jsc.org",  //not used in tests, get the Tenant from the header
                 schema = "jsc",
                 auth = TenantAuth(
+                    url = getOauthUri(),
                     issuerUri = getOauthUri() + "/jsc",
                     jwksUri = getOauthUri() + "/jsc/jwks",
                     realm = "jsc"
                 ),
                 modules = listOf(
-                    TenantModule("orga", "orga.jsc.org", "orga-front")
-                )
+                    TenantModule("orga", "orga.jsc.org", "orga-front"),
+                ),
+                backends = listOf(
+                    TenantBackend(name = "kalon", url = "https://kalon.jsc.org"),
+                ),
             )
 
             registry.add("kalon.tenants.config") { listOf(breizhcamp, jsc) }

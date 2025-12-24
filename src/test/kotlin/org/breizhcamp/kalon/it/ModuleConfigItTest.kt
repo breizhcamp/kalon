@@ -16,7 +16,8 @@ class ModuleConfigItTest: AbstractItTest() {
             .expectBody().json("""[
                 {"key":"KEYCLOAK_URL", "value":"${getOauthUri()}/breizhcamp"},
                 {"key":"KEYCLOAK_REALM", "value":"breizhcamp"},
-                {"key":"KEYCLOAK_CLIENT_ID", "value":"orga-front"}
+                {"key":"KEYCLOAK_CLIENT_ID", "value":"orga-front"},
+                {"key":"KALON_URL", "value":"https://kalon.breizhcamp.org"}
             ]""".trimIndent())
     }
 }

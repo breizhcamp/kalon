@@ -1,6 +1,7 @@
 package org.breizhcamp.kalon.it
 
 import com.fasterxml.jackson.annotation.JsonProperty
+import org.breizhcamp.kalon.config.TenantAuth
 import org.breizhcamp.kalon.config.TenantConfig
 import org.breizhcamp.kalon.config.multitenant.TenantName
 import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureRestTestClient
@@ -88,16 +89,20 @@ abstract class AbstractItTest {
                 name = "breizhcamp",
                 domain = "breizhcamp.org", //not used in tests, get the Tenant from the header
                 schema = "breizhcamp",
-                issuerUri = getOauthUri() + "/breizhcamp",
-                jwksUri = getOauthUri() + "/breizhcamp/jwks"
+                auth = TenantAuth(
+                    issuerUri = getOauthUri() + "/breizhcamp",
+                    jwksUri = getOauthUri() + "/breizhcamp/jwks"
+                )
             )
 
             val jsc = TenantConfig(
                 name = "jsc",
                 domain = "jsc.org",  //not used in tests, get the Tenant from the header
                 schema = "jsc",
-                issuerUri = getOauthUri() + "/jsc",
-                jwksUri = getOauthUri() + "/jsc/jwks"
+                auth = TenantAuth(
+                    issuerUri = getOauthUri() + "/jsc",
+                    jwksUri = getOauthUri() + "/jsc/jwks"
+                )
             )
 
             registry.add("kalon.tenants.config") { listOf(breizhcamp, jsc) }

@@ -9,9 +9,15 @@ class TenantRepo(
     private val config: KalonConfig,
 ) {
 
-    private val tenants = config.tenants.config.associate { it.domain to it.toTenant() }
+    private val tenants = initTenants()
     val default = tenants.values.find { it.name.value == config.tenants.default }
         ?: throw IllegalStateException("Default tenant '${config.tenants.default}' not found in configuration")
+
+    fun initTenants(): Map<String, Tenant> {
+        return config.tenants.config.associate { it.domain to it.toTenant() } +
+                config.tenants.config
+                    .flatMap { t -> t.modules.map { it.domain to t.toTenant() } }
+    }
 
     fun fromHost(host: String): Tenant? = tenants[host]
 

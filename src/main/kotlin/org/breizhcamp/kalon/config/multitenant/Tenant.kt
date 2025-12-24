@@ -15,9 +15,9 @@ data class Tenant(
 )
 
 fun TenantConfig.toTenant() = Tenant(
-    name = TenantName(this.name),
-    domain = this.domain,
-    schema = this.schema,
-    issuerUri = this.issuerUri,
-    jwksUri = jwksUri,
+    name = TenantName(name),
+    domain = domain,
+    schema = schema,
+    issuerUri = auth.issuerUri,
+    jwksUri = auth.jwksUri,
 )

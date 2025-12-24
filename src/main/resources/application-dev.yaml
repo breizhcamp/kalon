@@ -16,14 +16,19 @@ kalon:
 
       config:
         - name: breizhcamp
-          domain: localhost
+          domain: "localhost:4010"
           schema: breizhcamp
-          issuer-uri: http://localhost:4012/breizhcamp
-          jwks-uri: http://localhost:4012/breizhcamp/jwks
+          auth:
+            issuer-uri: http://localhost:4012/breizhcamp
+            jwks-uri: http://localhost:4012/breizhcamp/jwks
+          modules:
+            - name: orga
+              domain: "localhost:4000"
 
         - name: jsc
           domain: jsc.localhost
           schema: jsc
-          issuer-uri: http://localhost:4012/jsc
-          jwks-uri: http://localhost:4012/jsc/jwks
+          auth:
+            issuer-uri: http://localhost:4012/jsc
+            jwks-uri: http://localhost:4012/jsc/jwks
 

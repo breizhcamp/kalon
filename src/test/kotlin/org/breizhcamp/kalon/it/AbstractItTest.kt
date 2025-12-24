@@ -3,10 +3,11 @@ package org.breizhcamp.kalon.it
 import com.fasterxml.jackson.annotation.JsonProperty
 import org.breizhcamp.kalon.config.TenantAuth
 import org.breizhcamp.kalon.config.TenantConfig
+import org.breizhcamp.kalon.config.TenantModule
 import org.breizhcamp.kalon.config.multitenant.TenantName
 import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureRestTestClient
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection
+import org.springframework.context.annotation.Import
 import org.springframework.http.MediaType
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.DynamicPropertyRegistry
@@ -16,12 +17,11 @@ import org.springframework.util.LinkedMultiValueMap
 import org.springframework.web.client.RestClient
 import org.springframework.web.client.body
 import org.testcontainers.containers.GenericContainer
-import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
-import org.testcontainers.postgresql.PostgreSQLContainer
 import org.testcontainers.utility.DockerImageName
 import org.testcontainers.utility.MountableFile
 
+@Import(ItContainers::class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("it")
 @Testcontainers
@@ -48,7 +48,7 @@ abstract class AbstractItTest {
             ?: error("No token returned")
     }
 
-    fun createClient(webClient: RestTestClient, tenant: TenantName, authToken: String) =
+    fun createClient(webClient: RestTestClient, tenant: TenantName, authToken: String): RestTestClient =
         webClient.mutate()
             .defaultHeader("Authorization", "Bearer $authToken")
             .defaultHeader("X-Tenant", tenant.value)
@@ -56,16 +56,6 @@ abstract class AbstractItTest {
 
     companion object {
 
-        @Container
-        @ServiceConnection
-        @JvmStatic
-        val postgresql: PostgreSQLContainer = PostgreSQLContainer("postgres:15.2")
-            .withCopyFileToContainer(
-                MountableFile.forClasspathResource("init-pg-schema.sql"),
-                "/docker-entrypoint-initdb.d/init.sql"
-            )
-
-        @Container
         @JvmStatic
         val oAuth2Server: GenericContainer<*> = GenericContainer(DockerImageName.parse("ghcr.io/navikt/mock-oauth2-server:3.0.1"))
             .withExposedPorts(8080)
@@ -74,6 +64,7 @@ abstract class AbstractItTest {
                 MountableFile.forClasspathResource("oauth2-mock-server-config.json"),
                 "/config/mock-oauth2-server.json"
             )
+            .apply { start() }
 
         @JvmStatic
         fun getOauthUri(): String {
@@ -91,7 +82,11 @@ abstract class AbstractItTest {
                 schema = "breizhcamp",
                 auth = TenantAuth(
                     issuerUri = getOauthUri() + "/breizhcamp",
-                    jwksUri = getOauthUri() + "/breizhcamp/jwks"
+                    jwksUri = getOauthUri() + "/breizhcamp/jwks",
+                    realm = "breizhcamp",
+                ),
+                modules = listOf(
+                    TenantModule("orga", "orga.breizhcamp.org", "orga-front")
                 )
             )
 
@@ -101,7 +96,11 @@ abstract class AbstractItTest {
                 schema = "jsc",
                 auth = TenantAuth(
                     issuerUri = getOauthUri() + "/jsc",
-                    jwksUri = getOauthUri() + "/jsc/jwks"
+                    jwksUri = getOauthUri() + "/jsc/jwks",
+                    realm = "jsc"
+                ),
+                modules = listOf(
+                    TenantModule("orga", "orga.jsc.org", "orga-front")
                 )
             )
 

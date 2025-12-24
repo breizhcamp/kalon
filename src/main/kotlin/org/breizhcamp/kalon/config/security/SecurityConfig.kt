@@ -50,6 +50,8 @@ class SecurityConfig {
     fun web(http: HttpSecurity, jwtTenantDecoder: JwtDecoder): SecurityFilterChain {
 
         http {
+            cors {  }
+
             addFilterAfter<SwitchUserFilter>(UserMDCFilter())
 
             oauth2ResourceServer {
@@ -64,6 +66,7 @@ class SecurityConfig {
             authorizeHttpRequests {
                 authorize("/swagger-ui/**", permitAll)
                 authorize("/v3/api-docs/**", permitAll)
+                authorize("/modules/config", permitAll)
                 authorize(anyRequest, authenticated)
             }
 

@@ -23,9 +23,11 @@ data class TenantConfig(
 data class TenantAuth(
     val issuerUri: String,
     val jwksUri: String? = null,
+    val realm: String,
 )
 
 data class TenantModule(
     val name: String,
     val domain: String,
+    val authClientId: String,
 )

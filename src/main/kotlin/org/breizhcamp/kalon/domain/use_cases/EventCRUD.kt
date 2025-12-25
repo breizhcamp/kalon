@@ -54,6 +54,8 @@ class EventCRUD(
 
     fun list(): List<Event> = eventPort.list()
 
+    fun get(eventId: EventId): Event = eventPort.get(eventId) ?: throw NotFoundException<Event>(eventId)
+
     private fun checkStartBeforeEndDate(event: Event) {
         if (event.startDate.isAfter(event.endDate)) {
             throw InconsistentStartEndDateException(event.startDate, event.endDate)

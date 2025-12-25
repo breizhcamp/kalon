@@ -7,6 +7,7 @@ import org.breizhcamp.kalon.domain.ports.EventPort
 import org.breizhcamp.kalon.infrastructure.db.mappers.toDb
 import org.breizhcamp.kalon.infrastructure.db.mappers.toDomain
 import org.breizhcamp.kalon.infrastructure.db.repos.EventRepo
+import org.springframework.data.repository.findByIdOrNull
 
 @Adapter
 class EventAdapter(
@@ -29,4 +30,7 @@ class EventAdapter(
     }
 
     override fun list(): List<Event> = eventRepo.findAllByOrderByStartDateDesc().map { it.toDomain() }
+
+    override fun get(id: EventId): Event? =
+        eventRepo.findByIdOrNull(id.value)?.toDomain()
 }

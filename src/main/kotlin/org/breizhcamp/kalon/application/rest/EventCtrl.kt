@@ -64,6 +64,12 @@ class EventCtrl(
         return eventCRUD.list().map { mapper(it) }
     }
 
+    @Operation(summary = "Get an event")
+    @GetMapping("/{id}")
+    @IsUser
+    fun get(@PathVariable @Log(KalonMDC.EVENT_ID) id: String): EventFullAPI =
+        eventCRUD.get(EventId(id)).toFullApi()
+
     @ExceptionHandler(EventIdAlreadyExistsException::class)
     @ResponseStatus(HttpStatus.CONFLICT)
     fun idAlreadyExistsExceptionHandler() {}

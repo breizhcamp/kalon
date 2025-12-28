@@ -19,7 +19,7 @@ class WebConfig(
         registry.addMapping("/**")
             .allowedOrigins(*domains)
             .allowCredentials(true)
-            .allowedMethods("GET", "POST", "PUT", "DELETE")
+            .allowedMethods("GET", "POST", "PUT", "DELETE", "HEAD")
     }
 
 }

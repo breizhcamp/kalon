@@ -17,6 +17,9 @@ class EventCRUD(
     private val eventPort: EventPort,
 ) {
 
+    fun exists(id: EventId): Boolean =
+        eventPort.isIdExists(id)
+
     @Tx
     fun create(event: Event) {
         logger.info { "Creating event" }

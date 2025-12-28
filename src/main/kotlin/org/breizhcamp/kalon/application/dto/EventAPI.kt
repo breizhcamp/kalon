@@ -33,8 +33,8 @@ data class EventFullAPI(
     @field:Schema(description = "Event venue", example = "Conference Center, City")
     val venue: String?,
 ) : EventAPI(), LogMDC {
-    fun toDomain() = Event(
-        id = EventId(id),
+    fun toDomain(id: String? = null) = Event(
+        id = EventId(id ?: this.id),
         name = name,
         startDate = startDate,
         endDate = endDate,

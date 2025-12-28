@@ -16,6 +16,12 @@ class EventCRUDIt: AbstractItTest() {
         val event = EventHelper.get()
         val eventId = event.id.value
 
+        // Check id is available
+        client.head()
+            .uri("/events/{id}", eventId)
+            .exchange()
+            .expectStatus().isNotFound
+
         // Create Event
         client.post()
             .uri("/events")
@@ -26,9 +32,15 @@ class EventCRUDIt: AbstractItTest() {
         // List Events
         client.listEvents().jsonPath("$[?(@.id == '$eventId')]").exists()
 
+        // Check id is not available anymore
+        client.head()
+            .uri("/events/{id}", eventId)
+            .exchange()
+            .expectStatus().isOk
+
         // Update Event
         client.put()
-            .uri("/events")
+            .uri("/events/{id}", eventId)
             .body(event.copy(name = "BreizhCamp 2025 - Updated"))
             .exchange()
             .expectStatus().isNoContent()
@@ -70,7 +82,7 @@ class EventCRUDIt: AbstractItTest() {
 
         // Try to update Event (should fail)
         client.put()
-            .uri("/events")
+            .uri("/events/{id}", event.id.value)
             .body(event)
             .exchange()
             .expectStatus().isForbidden

@@ -30,5 +30,7 @@ kalon:
           backends:
             - name: kalon
               url: "http://localhost:4010"
+            - name: moneiz
+              url: "http://localhost:4005"
 
 

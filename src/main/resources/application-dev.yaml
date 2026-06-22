@@ -27,6 +27,9 @@ kalon:
             - name: orga
               domain: "localhost:4000"
               auth-client-id: orga-front
+            - name: sponsor
+              domain: localhost:4020
+              auth-client-id: sponsor-front
           backends:
             - name: kalon
               url: "http://localhost:4010"

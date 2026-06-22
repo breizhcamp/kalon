@@ -9,6 +9,7 @@ import org.breizhcamp.kalon.domain.entities.ModuleAuthConfig
 import org.breizhcamp.kalon.domain.entities.ModuleBackendConfig
 import org.breizhcamp.kalon.domain.entities.ModuleConfig
 import org.breizhcamp.kalon.domain.entities.OrgaModuleConfig
+import org.breizhcamp.kalon.domain.entities.SponsorModuleConfig
 import org.breizhcamp.kalon.domain.ports.ModulePort
 
 @Adapter
@@ -23,6 +24,9 @@ class ModuleAdapter(
             "orga" -> OrgaModuleConfig(
                 auth = module.toAuthDomain(tenant),
                 backends = tenant.backends.map { it.toDomain() }
+            )
+            "sponsor" -> SponsorModuleConfig(
+                backends = tenant.backends.map { it.toDomain() },
             )
             else -> null
         }

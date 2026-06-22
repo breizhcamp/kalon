@@ -5,6 +5,7 @@ import org.breizhcamp.kalon.domain.entities.ModuleAuthConfig
 import org.breizhcamp.kalon.domain.entities.ModuleBackendConfig
 import org.breizhcamp.kalon.domain.entities.ModuleConfig
 import org.breizhcamp.kalon.domain.entities.OrgaModuleConfig
+import org.breizhcamp.kalon.domain.entities.SponsorModuleConfig
 
 data class ModuleConfigAPI(
     @field:Schema(description = "Configuration key")
@@ -18,6 +19,7 @@ fun List<Pair<String, String>>.toModuleConfigAPI(): List<ModuleConfigAPI> =
 
 fun ModuleConfig.toApi(): List<ModuleConfigAPI> = when (this) {
     is OrgaModuleConfig -> this.auth.toApi() + this.backends.flatMap { it.toApi() }
+    is SponsorModuleConfig -> this.backends.flatMap { it.toApi() }
 }
 
 fun ModuleAuthConfig.toApi(): List<ModuleConfigAPI> = listOf(

@@ -1,12 +1,15 @@
 package org.breizhcamp.kalon.domain.entities
 
-sealed class ModuleConfig {}
+sealed class ModuleConfig
 
 data class OrgaModuleConfig(
     val auth: ModuleAuthConfig,
     val backends: List<ModuleBackendConfig>,
 ): ModuleConfig()
 
+data class SponsorModuleConfig(
+    val backends: List<ModuleBackendConfig>,
+): ModuleConfig()
 
 data class ModuleAuthConfig (
     val url: String,

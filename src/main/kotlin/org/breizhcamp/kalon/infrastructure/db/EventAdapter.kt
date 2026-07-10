@@ -33,4 +33,7 @@ class EventAdapter(
 
     override fun get(id: EventId): Event? =
         eventRepo.findByIdOrNull(id.value)?.toDomain()
+
+    override fun getDefaultEvent(): Event? =
+        eventRepo.getDefaultEvent()?.toDomain()
 }

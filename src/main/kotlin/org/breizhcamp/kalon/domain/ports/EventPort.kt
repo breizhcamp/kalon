@@ -11,5 +11,6 @@ interface EventPort {
     fun delete(eventId: EventId)
     fun list(): List<Event>
     fun get(id: EventId): Event?
+    fun getDefaultEvent(): Event?
 
 }

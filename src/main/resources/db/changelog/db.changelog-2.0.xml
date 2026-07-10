@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<databaseChangeLog
+		xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
+		xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd
+        http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
+
+	<changeSet id="002" author="floris">
+		<createTable tableName="app_config">
+			<column name="id" type="int" defaultValueNumeric="1">
+				<constraints primaryKey="true" nullable="false"/>
+			</column>
+			<column name="default_event_id" type="text">
+			<constraints nullable="true"/>
+			</column>
+		</createTable>
+		<addForeignKeyConstraint baseTableName="app_config"
+			baseColumnNames="default_event_id"
+			constraintName="fk_app_config_default_event"
+			referencedTableName="event"
+			referencedColumnNames="id"
+			onDelete="SET NULL"/>
+		<sql>
+			ALTER TABLE app_config
+			ADD CONSTRAINT app_config_single_row
+			CHECK (id = 1);
+		</sql>
+		<insert tableName="app_config">
+			<column name="id" valueNumeric="1"/>
+		</insert>
+	</changeSet>
+</databaseChangeLog>

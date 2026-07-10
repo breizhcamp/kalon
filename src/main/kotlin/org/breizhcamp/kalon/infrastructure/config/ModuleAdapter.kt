@@ -11,10 +11,12 @@ import org.breizhcamp.kalon.domain.entities.ModuleConfig
 import org.breizhcamp.kalon.domain.entities.OrgaModuleConfig
 import org.breizhcamp.kalon.domain.entities.SponsorModuleConfig
 import org.breizhcamp.kalon.domain.ports.ModulePort
+import org.breizhcamp.kalon.infrastructure.db.repos.AppConfigRepo
 
 @Adapter
 class ModuleAdapter(
     private val config: KalonConfig,
+    private val appConfigRepo: AppConfigRepo,
 ): ModulePort {
 
     override fun getFromHost(host: String): ModuleConfig? {
@@ -28,6 +30,9 @@ class ModuleAdapter(
             "sponsor" -> SponsorModuleConfig(
                 auth = module.toAuthDomain(tenant),
                 backends = tenant.backends.map { it.toDomain() },
+                defaultEventId = requireNotNull(
+                    appConfigRepo.getDefaultEventId(),
+                ),
             )
             else -> null
         }

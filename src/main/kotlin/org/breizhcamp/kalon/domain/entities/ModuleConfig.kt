@@ -10,6 +10,7 @@ data class OrgaModuleConfig(
 data class SponsorModuleConfig(
     val auth: ModuleAuthConfig,
     val backends: List<ModuleBackendConfig>,
+    val defaultEventId: EventId,
 ): ModuleConfig()
 
 data class ModuleAuthConfig (

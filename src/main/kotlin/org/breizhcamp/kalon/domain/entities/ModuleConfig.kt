@@ -8,6 +8,7 @@ data class OrgaModuleConfig(
 ): ModuleConfig()
 
 data class SponsorModuleConfig(
+    val auth: ModuleAuthConfig,
     val backends: List<ModuleBackendConfig>,
 ): ModuleConfig()
 

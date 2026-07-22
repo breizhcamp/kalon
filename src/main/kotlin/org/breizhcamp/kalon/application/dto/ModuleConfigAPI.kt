@@ -19,7 +19,7 @@ fun List<Pair<String, String>>.toModuleConfigAPI(): List<ModuleConfigAPI> =
 
 fun ModuleConfig.toApi(): List<ModuleConfigAPI> = when (this) {
     is OrgaModuleConfig -> this.auth.toApi() + this.backends.flatMap { it.toApi() }
-    is SponsorModuleConfig -> this.backends.flatMap { it.toApi() }
+    is SponsorModuleConfig -> this.auth.toApi() + this.backends.flatMap { it.toApi() }
 }
 
 fun ModuleAuthConfig.toApi(): List<ModuleConfigAPI> = listOf(

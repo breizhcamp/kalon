@@ -26,6 +26,7 @@ class ModuleAdapter(
                 backends = tenant.backends.map { it.toDomain() }
             )
             "sponsor" -> SponsorModuleConfig(
+                auth = module.toAuthDomain(tenant),
                 backends = tenant.backends.map { it.toDomain() },
             )
             else -> null
